@@ -5,6 +5,8 @@ import com.google.gson.JsonSyntaxException
 import com.intellij.openapi.diagnostic.logger
 import org.jetbrains.plugins.template.util.NotificationHelper
 import org.jetbrains.plugins.template.api.models.AgentsResponse
+import org.jetbrains.plugins.template.api.models.AnthropicRequest
+import org.jetbrains.plugins.template.api.models.AnthropicResponse
 import org.jetbrains.plugins.template.api.models.DatasetsResponse
 import org.jetbrains.plugins.template.api.models.ExecuteAgentRequest
 import org.jetbrains.plugins.template.api.models.ExecuteAgentResponse
@@ -13,6 +15,8 @@ import org.jetbrains.plugins.template.api.models.ExecutePluginResponse
 import org.jetbrains.plugins.template.api.models.FollowUpRequest
 import org.jetbrains.plugins.template.api.models.FollowUpResponse
 import org.jetbrains.plugins.template.api.models.ModelsResponse
+import org.jetbrains.plugins.template.api.models.OpenAiChatRequest
+import org.jetbrains.plugins.template.api.models.OpenAiChatResponse
 import org.jetbrains.plugins.template.api.models.PersonasResponse
 import org.jetbrains.plugins.template.api.models.PluginsResponse
 import org.jetbrains.plugins.template.api.models.QueryRequest
@@ -140,6 +144,14 @@ class AskSageApiClient(
 
     fun countMonthlyTokens(token: String): TokenUsageResponse {
         return post(AskSageEndpoints.COUNT_MONTHLY_TOKENS, null, token, TokenUsageResponse::class.java)
+    }
+
+    fun openAiChatCompletions(token: String, request: OpenAiChatRequest): OpenAiChatResponse {
+        return post(AskSageEndpoints.OPENAI_CHAT_COMPLETIONS, request, token, OpenAiChatResponse::class.java)
+    }
+
+    fun anthropicMessages(token: String, request: AnthropicRequest): AnthropicResponse {
+        return post(AskSageEndpoints.ANTHROPIC_MESSAGES, request, token, AnthropicResponse::class.java)
     }
 
     private fun <T> post(endpoint: String, body: Any?, token: String?, responseType: Class<T>): T {

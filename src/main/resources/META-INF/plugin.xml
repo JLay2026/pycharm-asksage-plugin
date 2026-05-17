@@ -64,6 +64,14 @@
             serviceImplementation="org.jetbrains.plugins.template.services.ChatSessionService"
         />
 
+        <projectService
+            serviceImplementation="org.jetbrains.plugins.template.services.ProjectContextService"
+        />
+
+        <applicationService
+            serviceImplementation="org.jetbrains.plugins.template.services.PromptTemplateService"
+        />
+
         <statusBarWidgetFactory
             implementation="org.jetbrains.plugins.template.ui.statusbar.AskSageStatusBarWidgetFactory"
             id="AskSageStatus"
