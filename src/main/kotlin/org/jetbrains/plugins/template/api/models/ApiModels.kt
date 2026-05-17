@@ -72,3 +72,16 @@ data class QueryResponse(
     val status: Int?,
     val message: String?,
 )
+
+// --- Follow-up Questions ---
+
+data class FollowUpRequest(
+    val message: String,
+    val response: String,
+    val model: String,
+)
+
+data class FollowUpResponse(
+    val response: List<String>?,
+    val status: Int?,
+)

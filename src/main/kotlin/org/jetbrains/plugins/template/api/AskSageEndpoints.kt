@@ -11,4 +11,5 @@ object AskSageEndpoints {
     const val GET_PERSONAS = "/server/get-personas"
     const val GET_DATASETS = "/server/get-datasets"
     const val QUERY = "/server/query"
+    const val FOLLOW_UP_QUESTIONS = "/server/follow-up-questions"
 }
