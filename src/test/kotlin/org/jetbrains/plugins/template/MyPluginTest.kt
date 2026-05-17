@@ -11,6 +11,6 @@ class MyPluginTest : BasePlatformTestCase() {
             PluginId.getId("org.jetbrains.plugins.template")
         )
         assertNotNull("Plugin descriptor should be loadable", descriptor)
-        assertEquals("IntelliJ Platform Plugin Template", descriptor!!.name)
+        assertEquals("Pymatic AskSage", descriptor!!.name)
     }
 }

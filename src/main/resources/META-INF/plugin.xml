@@ -1,11 +1,20 @@
 <!-- Plugin Configuration File. Read more: https://plugins.jetbrains.com/docs/intellij/plugin-configuration-file.html -->
 <idea-plugin>
     <id>org.jetbrains.plugins.template</id>
-    <name>IntelliJ Platform Plugin Template</name>
-    <vendor>JetBrains</vendor>
+    <name>Pymatic AskSage</name>
+    <vendor>BigBear.ai</vendor>
     <description><![CDATA[
-        <p><b>IntelliJ Platform Plugin Template</b> is a repository that provides a pure template to make it easier to create a new plugin project.</p>
-        <p>The main goal of this template is to speed up the setup phase of plugin development for both new and experienced developers by preconfiguring the project scaffold and CI, linking to the proper documentation pages, and keeping everything organized.</p>
+        <p><b>Pymatic AskSage</b> integrates the AskSage.ai API directly into your JetBrains IDE,
+        providing conversational AI assistance with user-selectable internet access modes and
+        dynamic model selection.</p>
+
+        <h3>Features</h3>
+        <ul>
+            <li><b>Live Mode Toggle</b> - Switch between No Live (offline), Live (web search), and Live+ (deep research) modes</li>
+            <li><b>Model Selection</b> - Choose from all available AI models, dynamically fetched from AskSage</li>
+            <li><b>Chat Interface</b> - Conversational AI chat directly in your IDE tool window</li>
+            <li><b>Secure Authentication</b> - API key stored securely via IntelliJ PasswordSafe</li>
+        </ul>
     ]]></description>
 
     <depends>com.intellij.modules.platform</depends>
@@ -13,7 +22,34 @@
     <resource-bundle>messages.MyBundle</resource-bundle>
 
     <extensions defaultExtensionNs="com.intellij">
-        <toolWindow factoryClass="org.jetbrains.plugins.template.toolWindow.MyToolWindowFactory" id="MyToolWindow"/>
-        <postStartupActivity implementation="org.jetbrains.plugins.template.startup.MyProjectActivity" />
+        <toolWindow
+            factoryClass="org.jetbrains.plugins.template.ui.toolwindow.AskSageToolWindowFactory"
+            id="AskSage"
+            anchor="right"
+            icon="AllIcons.Actions.Find"
+        />
+
+        <applicationConfigurable
+            parentId="tools"
+            instance="org.jetbrains.plugins.template.ui.settings.AskSageSettingsConfigurable"
+            id="org.jetbrains.plugins.template.ui.settings.AskSageSettingsConfigurable"
+            displayName="Pymatic AskSage"
+        />
+
+        <applicationService
+            serviceImplementation="org.jetbrains.plugins.template.api.auth.AuthManager"
+        />
+
+        <applicationService
+            serviceImplementation="org.jetbrains.plugins.template.services.AskSageSettingsState"
+        />
+
+        <applicationService
+            serviceImplementation="org.jetbrains.plugins.template.services.ModelRegistryService"
+        />
+
+        <projectService
+            serviceImplementation="org.jetbrains.plugins.template.services.ChatSessionService"
+        />
     </extensions>
 </idea-plugin>
