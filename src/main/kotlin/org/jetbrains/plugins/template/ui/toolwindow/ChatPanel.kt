@@ -23,7 +23,6 @@ import org.jetbrains.plugins.template.util.LiveMode
 import org.jetbrains.plugins.template.util.MarkdownRenderer
 import org.jetbrains.plugins.template.util.NotificationHelper
 import java.awt.BorderLayout
-import java.awt.Color
 import java.awt.Cursor
 import java.awt.Dimension
 import java.awt.FlowLayout
@@ -31,18 +30,23 @@ import java.awt.event.KeyAdapter
 import java.awt.event.KeyEvent
 import java.awt.event.MouseAdapter
 import java.awt.event.MouseEvent
+import java.awt.Toolkit
+import java.awt.datatransfer.StringSelection
 import javax.swing.BorderFactory
 import javax.swing.Box
 import javax.swing.BoxLayout
 import javax.swing.JButton
+import javax.swing.JFileChooser
 import javax.swing.JLabel
 import javax.swing.JPanel
 import javax.swing.JScrollBar
 import javax.swing.JTextPane
 import javax.swing.SwingUtilities
 import javax.swing.Timer
+import javax.swing.filechooser.FileNameExtensionFilter
 import javax.swing.text.SimpleAttributeSet
 import javax.swing.text.StyleConstants
+import org.jetbrains.plugins.template.util.AskSageIcons
 
 class ChatPanel(private val project: Project) : JPanel(BorderLayout()) {
 
@@ -72,6 +76,18 @@ class ChatPanel(private val project: Project) : JPanel(BorderLayout()) {
 
     private val clearButton = JButton("Clear").apply {
         preferredSize = Dimension(70, 28)
+    }
+
+    private val copyLastButton = JButton("", AskSageIcons.Copy).apply {
+        toolTipText = "Copy last response"
+        preferredSize = Dimension(28, 28)
+        isFocusPainted = false
+    }
+
+    private val exportButton = JButton("", AskSageIcons.Export).apply {
+        toolTipText = "Export conversation as Markdown"
+        preferredSize = Dimension(28, 28)
+        isFocusPainted = false
     }
 
     private val liveModeToggle = LiveModeToggle(
@@ -168,6 +184,10 @@ class ChatPanel(private val project: Project) : JPanel(BorderLayout()) {
             add(sendButton)
             add(Box.createVerticalStrut(4))
             add(clearButton)
+            add(Box.createVerticalStrut(4))
+            add(copyLastButton)
+            add(Box.createVerticalStrut(4))
+            add(exportButton)
         }
 
         val inputPanel = JPanel(BorderLayout()).apply {
@@ -213,6 +233,8 @@ class ChatPanel(private val project: Project) : JPanel(BorderLayout()) {
     private fun setupActions() {
         sendButton.addActionListener { sendMessage() }
         clearButton.addActionListener { clearChat() }
+        copyLastButton.addActionListener { copyLastResponse() }
+        exportButton.addActionListener { exportConversation() }
 
         inputArea.addKeyListener(object : KeyAdapter() {
             override fun keyPressed(e: KeyEvent) {
@@ -349,7 +371,7 @@ class ChatPanel(private val project: Project) : JPanel(BorderLayout()) {
         StyleConstants.setBold(headerAttrs, true)
         StyleConstants.setForeground(
             headerAttrs,
-            JBColor(Color(0, 100, 0), Color(100, 200, 100)),
+            ASSISTANT_HEADER_COLOR,
         )
 
         if (doc.length > 0) {
@@ -402,10 +424,10 @@ class ChatPanel(private val project: Project) : JPanel(BorderLayout()) {
                 prefix = "You"
             }
             MessageRole.ASSISTANT -> {
-                StyleConstants.setForeground(
-                    headerAttrs,
-                    JBColor(Color(0, 100, 0), Color(100, 200, 100)),
-                )
+                        StyleConstants.setForeground(
+                            headerAttrs,
+                            ASSISTANT_HEADER_COLOR,
+                        )
                 val modelTag = if (model != null) " [$model]" else ""
                 prefix = "AskSage$modelTag"
             }
@@ -452,6 +474,7 @@ class ChatPanel(private val project: Project) : JPanel(BorderLayout()) {
 
     private fun setLoading(loading: Boolean) {
         sendButton.isEnabled = !loading
+        sendButton.text = if (loading) "..." else "Send"
         inputArea.isEnabled = !loading
     }
 
@@ -499,7 +522,7 @@ class ChatPanel(private val project: Project) : JPanel(BorderLayout()) {
 
         for (question in questions.take(3)) {
             val questionLabel = JLabel("<html><u>$question</u></html>").apply {
-                foreground = JBColor(Color(30, 100, 180), Color(100, 160, 230))
+                foreground = FOLLOW_UP_LINK_COLOR
                 cursor = Cursor.getPredefinedCursor(Cursor.HAND_CURSOR)
                 border = BorderFactory.createEmptyBorder(2, 8, 2, 0)
                 addMouseListener(object : MouseAdapter() {
@@ -558,7 +581,68 @@ class ChatPanel(private val project: Project) : JPanel(BorderLayout()) {
         }
     }
 
+    private fun copyLastResponse() {
+        val lastAssistant = chatSessionService.getMessages()
+            .lastOrNull { it.role == MessageRole.ASSISTANT }
+        if (lastAssistant != null) {
+            val selection = StringSelection(lastAssistant.content)
+            Toolkit.getDefaultToolkit().systemClipboard.setContents(selection, null)
+            statusLabel.text = "Response copied to clipboard"
+        } else {
+            statusLabel.text = "No response to copy"
+        }
+    }
+
+    private fun exportConversation() {
+        val messages = chatSessionService.getMessages()
+        if (messages.isEmpty()) {
+            statusLabel.text = "No conversation to export"
+            return
+        }
+
+        val markdown = buildString {
+            appendLine("# AskSage Conversation")
+            appendLine()
+            for (msg in messages) {
+                when (msg.role) {
+                    MessageRole.USER -> {
+                        appendLine("## You")
+                        appendLine(msg.content)
+                        appendLine()
+                    }
+                    MessageRole.ASSISTANT -> {
+                        val modelTag = if (msg.model != null) " [${msg.model}]" else ""
+                        appendLine("## AskSage$modelTag")
+                        appendLine(msg.content)
+                        appendLine()
+                    }
+                    MessageRole.ERROR -> {
+                        appendLine("> **Error:** ${msg.content}")
+                        appendLine()
+                    }
+                }
+            }
+        }
+
+        val fileChooser = JFileChooser().apply {
+            dialogTitle = "Export Conversation"
+            fileFilter = FileNameExtensionFilter("Markdown files (*.md)", "md")
+            selectedFile = java.io.File("asksage-conversation.md")
+        }
+
+        if (fileChooser.showSaveDialog(this) == JFileChooser.APPROVE_OPTION) {
+            var file = fileChooser.selectedFile
+            if (!file.name.endsWith(".md")) {
+                file = java.io.File(file.absolutePath + ".md")
+            }
+            file.writeText(markdown)
+            statusLabel.text = "Conversation exported to ${file.name}"
+        }
+    }
+
     companion object {
         private val LOG = logger<ChatPanel>()
+        private val ASSISTANT_HEADER_COLOR = JBColor(0x006400, 0x64C864)
+        private val FOLLOW_UP_LINK_COLOR = JBColor(0x1E64B4, 0x64A0E6)
     }
 }
