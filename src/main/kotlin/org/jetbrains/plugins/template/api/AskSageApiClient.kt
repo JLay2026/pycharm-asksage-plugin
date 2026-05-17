@@ -3,15 +3,24 @@ package org.jetbrains.plugins.template.api
 import com.google.gson.Gson
 import com.google.gson.JsonSyntaxException
 import com.intellij.openapi.diagnostic.logger
+import org.jetbrains.plugins.template.api.models.AgentsResponse
 import org.jetbrains.plugins.template.api.models.DatasetsResponse
+import org.jetbrains.plugins.template.api.models.ExecuteAgentRequest
+import org.jetbrains.plugins.template.api.models.ExecuteAgentResponse
+import org.jetbrains.plugins.template.api.models.ExecutePluginRequest
+import org.jetbrains.plugins.template.api.models.ExecutePluginResponse
 import org.jetbrains.plugins.template.api.models.FollowUpRequest
 import org.jetbrains.plugins.template.api.models.FollowUpResponse
 import org.jetbrains.plugins.template.api.models.ModelsResponse
 import org.jetbrains.plugins.template.api.models.PersonasResponse
+import org.jetbrains.plugins.template.api.models.PluginsResponse
 import org.jetbrains.plugins.template.api.models.QueryRequest
 import org.jetbrains.plugins.template.api.models.QueryResponse
 import org.jetbrains.plugins.template.api.models.TokenRequest
 import org.jetbrains.plugins.template.api.models.TokenResponse
+import org.jetbrains.plugins.template.api.models.TokenUsageResponse
+import org.jetbrains.plugins.template.api.models.TrainRequest
+import org.jetbrains.plugins.template.api.models.TrainResponse
 import java.io.BufferedReader
 import java.io.IOException
 import java.io.InputStreamReader
@@ -105,6 +114,30 @@ class AskSageApiClient(
     fun getFollowUpQuestions(token: String, message: String, response: String, model: String): FollowUpResponse {
         val request = FollowUpRequest(message = message, response = response, model = model)
         return post(AskSageEndpoints.FOLLOW_UP_QUESTIONS, request, token, FollowUpResponse::class.java)
+    }
+
+    fun getPlugins(token: String): PluginsResponse {
+        return post(AskSageEndpoints.GET_PLUGINS, null, token, PluginsResponse::class.java)
+    }
+
+    fun executePlugin(token: String, request: ExecutePluginRequest): ExecutePluginResponse {
+        return post(AskSageEndpoints.EXECUTE_PLUGIN, request, token, ExecutePluginResponse::class.java)
+    }
+
+    fun listAgents(token: String): AgentsResponse {
+        return post(AskSageEndpoints.LIST_AGENTS, null, token, AgentsResponse::class.java)
+    }
+
+    fun executeAgent(token: String, request: ExecuteAgentRequest): ExecuteAgentResponse {
+        return post(AskSageEndpoints.EXECUTE_AGENT, request, token, ExecuteAgentResponse::class.java)
+    }
+
+    fun train(token: String, request: TrainRequest): TrainResponse {
+        return post(AskSageEndpoints.TRAIN, request, token, TrainResponse::class.java)
+    }
+
+    fun countMonthlyTokens(token: String): TokenUsageResponse {
+        return post(AskSageEndpoints.COUNT_MONTHLY_TOKENS, null, token, TokenUsageResponse::class.java)
     }
 
     private fun <T> post(endpoint: String, body: Any?, token: String?, responseType: Class<T>): T {
