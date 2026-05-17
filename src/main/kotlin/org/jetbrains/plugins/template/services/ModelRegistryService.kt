@@ -7,6 +7,7 @@ import org.jetbrains.plugins.template.api.AskSageApiClient
 import org.jetbrains.plugins.template.api.AskSageApiException
 import org.jetbrains.plugins.template.api.auth.AuthManager
 import org.jetbrains.plugins.template.api.models.ModelInfo
+import org.jetbrains.plugins.template.util.NotificationHelper
 
 @Service(Service.Level.APP)
 class ModelRegistryService {
@@ -41,6 +42,7 @@ class ModelRegistryService {
             }
         } catch (e: AskSageApiException) {
             LOG.warn("Failed to fetch models", e)
+            NotificationHelper.warn(null, "AskSage", "Failed to refresh models: ${e.message}")
         }
     }
 

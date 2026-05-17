@@ -9,6 +9,7 @@ import com.intellij.openapi.components.Service
 import com.intellij.openapi.diagnostic.logger
 import org.jetbrains.plugins.template.api.AskSageApiClient
 import org.jetbrains.plugins.template.api.AskSageApiException
+import org.jetbrains.plugins.template.util.NotificationHelper
 
 @Service(Service.Level.APP)
 class AuthManager {
@@ -59,11 +60,12 @@ class AuthManager {
                 cachedToken
             } else {
                 LOG.warn("Token exchange failed: ${response.response}")
-                // Fall back to using API key directly
+                NotificationHelper.warn(null, "AskSage Auth", "Token exchange failed, using API key directly")
                 apiKey
             }
         } catch (e: AskSageApiException) {
             LOG.warn("Token exchange failed, falling back to API key", e)
+            NotificationHelper.warn(null, "AskSage Auth", "Token exchange failed: ${e.message}. Using API key directly.")
             apiKey
         }
     }

@@ -10,6 +10,7 @@ import org.jetbrains.plugins.template.api.AskSageApiException
 import org.jetbrains.plugins.template.api.auth.AuthManager
 import org.jetbrains.plugins.template.api.models.TokenUsageData
 import org.jetbrains.plugins.template.services.AskSageSettingsState
+import org.jetbrains.plugins.template.util.NotificationHelper
 import java.awt.BorderLayout
 import java.awt.Color
 import java.awt.Dimension
@@ -122,6 +123,7 @@ class TokenUsagePanel(private val project: Project) : JPanel(BorderLayout()) {
                 }
             } catch (e: AskSageApiException) {
                 LOG.warn("Failed to load token usage", e)
+                NotificationHelper.warn(project, "AskSage", "Failed to load token usage: ${e.message}")
                 SwingUtilities.invokeLater {
                     refreshButton.isEnabled = true
                     statusLabel.text = "Error: ${e.message}"

@@ -13,6 +13,7 @@ import org.jetbrains.plugins.template.api.models.TrainRequest
 import org.jetbrains.plugins.template.services.AskSageSettingsState
 import org.jetbrains.plugins.template.services.DatasetRegistryService
 import org.jetbrains.plugins.template.services.EditorContextService
+import org.jetbrains.plugins.template.util.NotificationHelper
 
 class AddToKnowledgeBaseAction : AnAction() {
 
@@ -90,6 +91,7 @@ class AddToKnowledgeBaseAction : AnAction() {
                 }
             } catch (e: AskSageApiException) {
                 LOG.warn("Failed to add to knowledge base", e)
+                NotificationHelper.error(project, "Knowledge Base Error", "Failed to add to knowledge base: ${e.message}")
                 ApplicationManager.getApplication().invokeLater {
                     Messages.showErrorDialog(
                         project,
