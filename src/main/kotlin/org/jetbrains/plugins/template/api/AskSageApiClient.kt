@@ -3,6 +3,7 @@ package org.jetbrains.plugins.template.api
 import com.google.gson.Gson
 import com.google.gson.JsonSyntaxException
 import com.intellij.openapi.diagnostic.logger
+import org.jetbrains.plugins.template.util.NotificationHelper
 import org.jetbrains.plugins.template.api.models.AgentsResponse
 import org.jetbrains.plugins.template.api.models.DatasetsResponse
 import org.jetbrains.plugins.template.api.models.ExecuteAgentRequest
@@ -33,6 +34,7 @@ import java.util.function.Consumer
 
 class AskSageApiClient(
     private var baseUrl: String = AskSageEndpoints.DEFAULT_BASE_URL,
+    internal var requestExecutor: HttpRequestExecutor? = null,
 ) {
     private val gson = Gson()
     private val httpClient: HttpClient = HttpClient.newBuilder()
@@ -166,7 +168,8 @@ class AskSageApiClient(
                     Thread.sleep(delayMs)
                 }
 
-                val response = httpClient.send(httpRequest, HttpResponse.BodyHandlers.ofString())
+                val response = requestExecutor?.execute(httpRequest)
+                    ?: httpClient.send(httpRequest, HttpResponse.BodyHandlers.ofString())
                 val responseBody = response.body()
 
                 if (response.statusCode() in 500..599) {
@@ -181,6 +184,16 @@ class AskSageApiClient(
                     continue
                 }
 
+                if (response.statusCode() == 401) {
+                    LOG.warn("Unauthorized (401) for $endpoint — token may be expired")
+                    NotificationHelper.warn(
+                        null,
+                        "AskSage Auth",
+                        "Authentication expired. Please re-enter your credentials in Settings.",
+                    )
+                    throw AskSageAuthException("Authentication expired (401). Please re-enter credentials.")
+                }
+
                 if (response.statusCode() !in 200..299) {
                     LOG.warn("API request to $endpoint failed with status ${response.statusCode()}: $responseBody")
                 }
@@ -190,7 +203,7 @@ class AskSageApiClient(
                 LOG.warn("Network error calling $endpoint, attempt ${attempt + 1}/$MAX_RETRIES", e)
                 lastException = e
             } catch (e: JsonSyntaxException) {
-                LOG.error("Failed to parse response from $endpoint", e)
+                LOG.warn("Failed to parse response from $endpoint", e)
                 throw AskSageApiException("Invalid response format: ${e.message}", e)
             } catch (e: InterruptedException) {
                 Thread.currentThread().interrupt()
@@ -211,4 +224,6 @@ class AskSageApiClient(
     }
 }
 
-class AskSageApiException(message: String, cause: Throwable? = null) : RuntimeException(message, cause)
+open class AskSageApiException(message: String, cause: Throwable? = null) : RuntimeException(message, cause)
+
+class AskSageAuthException(message: String, cause: Throwable? = null) : AskSageApiException(message, cause)

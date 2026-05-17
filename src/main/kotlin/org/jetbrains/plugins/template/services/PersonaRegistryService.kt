@@ -7,6 +7,7 @@ import org.jetbrains.plugins.template.api.AskSageApiClient
 import org.jetbrains.plugins.template.api.AskSageApiException
 import org.jetbrains.plugins.template.api.auth.AuthManager
 import org.jetbrains.plugins.template.api.models.PersonaInfo
+import org.jetbrains.plugins.template.util.NotificationHelper
 
 @Service(Service.Level.APP)
 class PersonaRegistryService {
@@ -37,6 +38,7 @@ class PersonaRegistryService {
             }
         } catch (e: AskSageApiException) {
             LOG.warn("Failed to fetch personas", e)
+            NotificationHelper.warn(null, "AskSage", "Failed to refresh personas: ${e.message}")
         }
     }
 

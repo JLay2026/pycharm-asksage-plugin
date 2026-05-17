@@ -21,6 +21,7 @@ import org.jetbrains.plugins.template.services.ModelRegistryService
 import org.jetbrains.plugins.template.services.PersonaRegistryService
 import org.jetbrains.plugins.template.util.LiveMode
 import org.jetbrains.plugins.template.util.MarkdownRenderer
+import org.jetbrains.plugins.template.util.NotificationHelper
 import java.awt.BorderLayout
 import java.awt.Color
 import java.awt.Cursor
@@ -330,6 +331,7 @@ class ChatPanel(private val project: Project) : JPanel(BorderLayout()) {
                 fetchFollowUpQuestions(token, message, finalResponse, selectedModel)
             } catch (e: AskSageApiException) {
                 LOG.warn("Query failed", e)
+                NotificationHelper.error(project, "AskSage Query Failed", e.message ?: "Unknown error")
                 SwingUtilities.invokeLater {
                     appendMessage(MessageRole.ERROR, "Error: ${e.message}", null)
                     chatSessionService.addMessage(ChatMessage(MessageRole.ERROR, "Error: ${e.message}"))

@@ -6,6 +6,7 @@ import com.intellij.openapi.diagnostic.logger
 import org.jetbrains.plugins.template.api.AskSageApiClient
 import org.jetbrains.plugins.template.api.AskSageApiException
 import org.jetbrains.plugins.template.api.auth.AuthManager
+import org.jetbrains.plugins.template.util.NotificationHelper
 
 @Service(Service.Level.APP)
 class DatasetRegistryService {
@@ -36,6 +37,7 @@ class DatasetRegistryService {
             }
         } catch (e: AskSageApiException) {
             LOG.warn("Failed to fetch datasets", e)
+            NotificationHelper.warn(null, "AskSage", "Failed to refresh datasets: ${e.message}")
         }
     }
 

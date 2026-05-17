@@ -17,6 +17,7 @@ import org.jetbrains.plugins.template.services.AskSageSettingsState
 import org.jetbrains.plugins.template.services.ModelRegistryService
 import org.jetbrains.plugins.template.util.LiveMode
 import org.jetbrains.plugins.template.util.MarkdownRenderer
+import org.jetbrains.plugins.template.util.NotificationHelper
 import java.awt.BorderLayout
 import java.awt.Component
 import java.awt.Dimension
@@ -184,6 +185,7 @@ class PluginBrowserPanel(private val project: Project) : JPanel(BorderLayout()) 
                 }
             } catch (e: AskSageApiException) {
                 LOG.warn("Plugin execution failed", e)
+                NotificationHelper.error(project, "Plugin Execution Failed", e.message ?: "Unknown error")
                 SwingUtilities.invokeLater {
                     resultDisplay.text = "Error: ${e.message}"
                     executeButton.isEnabled = true
@@ -220,6 +222,7 @@ class PluginBrowserPanel(private val project: Project) : JPanel(BorderLayout()) 
                 }
             } catch (e: AskSageApiException) {
                 LOG.warn("Failed to load plugins", e)
+                NotificationHelper.warn(project, "AskSage", "Failed to load plugins: ${e.message}")
                 SwingUtilities.invokeLater {
                     statusLabel.text = "Failed to load plugins: ${e.message}"
                 }
