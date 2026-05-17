@@ -13,6 +13,10 @@
             <li><b>Live Mode Toggle</b> - Switch between No Live (offline), Live (web search), and Live+ (deep research) modes</li>
             <li><b>Model Selection</b> - Choose from all available AI models, dynamically fetched from AskSage</li>
             <li><b>Chat Interface</b> - Conversational AI chat directly in your IDE tool window</li>
+            <li><b>Plugin Browser</b> - Browse and execute AskSage plugins with results rendered inline</li>
+            <li><b>Agent Execution</b> - Run AskSage agents for complex multi-step tasks</li>
+            <li><b>Knowledge Base Training</b> - Add code from the editor directly to your AskSage datasets</li>
+            <li><b>Token Usage Dashboard</b> - Monitor monthly, daily, and remaining token usage</li>
             <li><b>Secure Authentication</b> - API key stored securely via IntelliJ PasswordSafe</li>
         </ul>
     ]]></description>
@@ -111,6 +115,16 @@
                     description="Send selected code to AskSage chat"
                     icon="AllIcons.Actions.Forward">
                 <keyboard-shortcut keymap="$default" first-keystroke="ctrl alt S"/>
+            </action>
+
+            <separator/>
+
+            <action id="AskSage.AddToKnowledgeBase"
+                    class="org.jetbrains.plugins.template.actions.AddToKnowledgeBaseAction"
+                    text="Add to Knowledge Base"
+                    description="Add selected code or current file to an AskSage dataset"
+                    icon="AllIcons.ToolbarDecorator.AddIcon">
+                <keyboard-shortcut keymap="$default" first-keystroke="ctrl alt K"/>
             </action>
         </group>
     </actions>

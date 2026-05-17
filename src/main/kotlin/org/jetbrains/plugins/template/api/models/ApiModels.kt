@@ -85,3 +85,85 @@ data class FollowUpResponse(
     val response: List<String>?,
     val status: Int?,
 )
+
+// --- Plugins ---
+
+data class PluginInfo(
+    val id: String?,
+    val name: String,
+    val description: String?,
+    val category: String?,
+)
+
+data class PluginsResponse(
+    val response: List<PluginInfo>?,
+    val status: Int?,
+)
+
+data class ExecutePluginRequest(
+    val plugin: String,
+    val message: String,
+    val model: String,
+    val live: Int = 0,
+)
+
+data class ExecutePluginResponse(
+    val response: String?,
+    val status: Int?,
+    val message: String?,
+)
+
+// --- Agents ---
+
+data class AgentInfo(
+    val id: String?,
+    val name: String,
+    val description: String?,
+)
+
+data class AgentsResponse(
+    val response: List<AgentInfo>?,
+    val status: Int?,
+)
+
+data class ExecuteAgentRequest(
+    val agent: String,
+    val message: String,
+    val model: String,
+    val live: Int = 0,
+)
+
+data class ExecuteAgentResponse(
+    val response: String?,
+    val status: Int?,
+    val message: String?,
+)
+
+// --- Training ---
+
+data class TrainRequest(
+    val dataset: String,
+    val url: String? = null,
+    val content: String? = null,
+    val title: String? = null,
+)
+
+data class TrainResponse(
+    val response: String?,
+    val status: Int?,
+    val message: String?,
+)
+
+// --- Token Usage ---
+
+data class TokenUsageResponse(
+    val response: TokenUsageData?,
+    val status: Int?,
+)
+
+data class TokenUsageData(
+    @SerializedName("total_tokens") val totalTokens: Long?,
+    @SerializedName("monthly_tokens") val monthlyTokens: Long?,
+    @SerializedName("daily_tokens") val dailyTokens: Long?,
+    @SerializedName("remaining_tokens") val remainingTokens: Long?,
+)
