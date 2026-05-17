@@ -65,4 +65,53 @@
             id="AskSageStatus"
         />
     </extensions>
+
+    <actions>
+        <group id="AskSage.EditorContextMenu" text="AskSage" popup="true"
+               icon="AllIcons.Actions.Find">
+            <add-to-group group-id="EditorPopupMenu" anchor="last"/>
+
+            <action id="AskSage.ExplainCode"
+                    class="org.jetbrains.plugins.template.actions.ExplainCodeAction"
+                    text="Explain Code"
+                    description="Ask AskSage to explain the selected code or current file"
+                    icon="AllIcons.Actions.Preview">
+                <keyboard-shortcut keymap="$default" first-keystroke="ctrl alt E"/>
+            </action>
+
+            <action id="AskSage.RefactorCode"
+                    class="org.jetbrains.plugins.template.actions.RefactorCodeAction"
+                    text="Refactor with AskSage"
+                    description="Get refactoring suggestions from AskSage"
+                    icon="AllIcons.Actions.RefactoringBulb">
+                <keyboard-shortcut keymap="$default" first-keystroke="ctrl alt R"/>
+            </action>
+
+            <action id="AskSage.GenerateDocs"
+                    class="org.jetbrains.plugins.template.actions.GenerateDocsAction"
+                    text="Generate Documentation"
+                    description="Generate documentation for the selected code or current file"
+                    icon="AllIcons.FileTypes.Text">
+                <keyboard-shortcut keymap="$default" first-keystroke="ctrl alt D"/>
+            </action>
+
+            <action id="AskSage.AskAboutFile"
+                    class="org.jetbrains.plugins.template.actions.AskAboutFileAction"
+                    text="Ask About This File..."
+                    description="Ask AskSage a question about the current file"
+                    icon="AllIcons.Actions.Find">
+                <keyboard-shortcut keymap="$default" first-keystroke="ctrl alt A"/>
+            </action>
+
+            <separator/>
+
+            <action id="AskSage.SendSelection"
+                    class="org.jetbrains.plugins.template.actions.SendSelectionToAskSageAction"
+                    text="Send Selection to AskSage"
+                    description="Send selected code to AskSage chat"
+                    icon="AllIcons.Actions.Forward">
+                <keyboard-shortcut keymap="$default" first-keystroke="ctrl alt S"/>
+            </action>
+        </group>
+    </actions>
 </idea-plugin>
