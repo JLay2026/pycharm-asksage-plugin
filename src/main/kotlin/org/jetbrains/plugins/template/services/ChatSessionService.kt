@@ -7,15 +7,24 @@ import com.intellij.openapi.project.Project
 class ChatSessionService(private val project: Project) {
 
     private val messages = mutableListOf<ChatMessage>()
+    private val lock = Any()
 
     fun addMessage(message: ChatMessage) {
-        messages.add(message)
+        synchronized(lock) {
+            messages.add(message)
+        }
     }
 
-    fun getMessages(): List<ChatMessage> = messages.toList()
+    fun getMessages(): List<ChatMessage> {
+        synchronized(lock) {
+            return messages.toList()
+        }
+    }
 
     fun clearHistory() {
-        messages.clear()
+        synchronized(lock) {
+            messages.clear()
+        }
     }
 
     /**

@@ -11,8 +11,13 @@ import org.jetbrains.plugins.template.api.models.ModelInfo
 @Service(Service.Level.APP)
 class ModelRegistryService {
 
+    @Volatile
     private var models: List<ModelInfo> = emptyList()
+
+    @Volatile
     private var lastFetchTime: Long = 0
+
+    private val lock = Any()
 
     fun getModels(): List<ModelInfo> = models
 
@@ -28,8 +33,10 @@ class ModelRegistryService {
             val response = apiClient.getModels(token)
             val modelList = response.response?.data
             if (modelList != null) {
-                models = modelList.sortedBy { it.id }
-                lastFetchTime = System.currentTimeMillis()
+                synchronized(lock) {
+                    models = modelList.sortedBy { it.id }
+                    lastFetchTime = System.currentTimeMillis()
+                }
                 LOG.info("Fetched ${models.size} models")
             }
         } catch (e: AskSageApiException) {

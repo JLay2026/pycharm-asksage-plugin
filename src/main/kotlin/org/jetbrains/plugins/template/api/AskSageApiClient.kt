@@ -157,29 +157,57 @@ class AskSageApiClient(
 
         val httpRequest = requestBuilder.build()
 
-        try {
-            val response = httpClient.send(httpRequest, HttpResponse.BodyHandlers.ofString())
-            val responseBody = response.body()
+        var lastException: Exception? = null
+        for (attempt in 0 until MAX_RETRIES) {
+            try {
+                if (attempt > 0) {
+                    val delayMs = BASE_RETRY_DELAY_MS * (1L shl (attempt - 1))
+                    LOG.info("Retry $attempt for $endpoint after ${delayMs}ms")
+                    Thread.sleep(delayMs)
+                }
 
-            if (response.statusCode() !in 200..299) {
-                LOG.warn("API request to $endpoint failed with status ${response.statusCode()}: $responseBody")
+                val response = httpClient.send(httpRequest, HttpResponse.BodyHandlers.ofString())
+                val responseBody = response.body()
+
+                if (response.statusCode() in 500..599) {
+                    LOG.warn("Server error ($endpoint): ${response.statusCode()}, attempt ${attempt + 1}/$MAX_RETRIES")
+                    lastException = AskSageApiException("Server error (${response.statusCode()})")
+                    continue
+                }
+
+                if (response.statusCode() == 429) {
+                    LOG.warn("Rate limited ($endpoint), attempt ${attempt + 1}/$MAX_RETRIES")
+                    lastException = AskSageApiException("Rate limited (429)")
+                    continue
+                }
+
+                if (response.statusCode() !in 200..299) {
+                    LOG.warn("API request to $endpoint failed with status ${response.statusCode()}: $responseBody")
+                }
+
+                return gson.fromJson(responseBody, responseType)
+            } catch (e: IOException) {
+                LOG.warn("Network error calling $endpoint, attempt ${attempt + 1}/$MAX_RETRIES", e)
+                lastException = e
+            } catch (e: JsonSyntaxException) {
+                LOG.error("Failed to parse response from $endpoint", e)
+                throw AskSageApiException("Invalid response format: ${e.message}", e)
+            } catch (e: InterruptedException) {
+                Thread.currentThread().interrupt()
+                throw AskSageApiException("Request interrupted", e)
             }
-
-            return gson.fromJson(responseBody, responseType)
-        } catch (e: IOException) {
-            LOG.error("Network error calling $endpoint", e)
-            throw AskSageApiException("Network error: ${e.message}", e)
-        } catch (e: JsonSyntaxException) {
-            LOG.error("Failed to parse response from $endpoint", e)
-            throw AskSageApiException("Invalid response format: ${e.message}", e)
-        } catch (e: InterruptedException) {
-            Thread.currentThread().interrupt()
-            throw AskSageApiException("Request interrupted", e)
         }
+
+        throw AskSageApiException(
+            "Request to $endpoint failed after $MAX_RETRIES attempts: ${lastException?.message}",
+            lastException,
+        )
     }
 
     companion object {
         private val LOG = logger<AskSageApiClient>()
+        private const val MAX_RETRIES = 3
+        private const val BASE_RETRY_DELAY_MS = 1000L
     }
 }
 

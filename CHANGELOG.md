@@ -1,12 +1,45 @@
 <!-- Keep a Changelog guide -> https://keepachangelog.com -->
 
-# IntelliJ Platform Plugin Template Changelog
+# Pymatic AskSage Plugin Changelog
 
 ## [Unreleased]
 
 ### Added
 
-- Add operator function for resource bundle key access in `MyBundle`
+- **Milestone 5: Polish & Release**
+  - Retry logic with exponential backoff for API requests (3 retries, handles 5xx and 429 errors)
+  - Thread safety improvements across all registry services and chat session (synchronized access, @Volatile fields)
+  - User-facing balloon notifications via IntelliJ notification system
+  - Expanded test suite: EditorContextService, ChatSessionService, MarkdownRenderer, LiveMode, ApiModels (30+ test cases)
+  - Comprehensive README with features, architecture, API coverage, and getting started guide
+
+- **Milestone 4: Plugins, Agents & Training**
+  - Plugin browser tab — browse and execute AskSage plugins
+  - Agent execution tab — run AskSage agents for multi-step tasks
+  - "Add to Knowledge Base" editor action (`Ctrl+Alt+K`) — train AskSage datasets from code
+  - Token usage dashboard — monthly/daily/total/remaining tokens with color-coded progress bar
+  - 6 new API endpoints and 10 new DTOs
+
+- **Milestone 3: File & Editor Integration**
+  - EditorContextService with language detection for 30+ file types
+  - Right-click context menu: Explain Code, Refactor, Generate Docs, Ask About File, Send Selection
+  - Keyboard shortcuts: `Ctrl+Alt+E/R/D/A/S`
+  - ChatPanel `sendMessageWithContext()` integration
+
+- **Milestone 2: Rich Chat Experience**
+  - SSE-based streaming responses with incremental rendering
+  - Markdown renderer (code blocks, headers, bold/italic, inline code, lists, blockquotes)
+  - Multi-turn conversation history (up to 10 turns)
+  - Persona and dataset selectors with 30-minute cache refresh
+  - Clickable follow-up question suggestions
+  - Status bar widget showing live mode and model
+
+- **Milestone 1: Foundation**
+  - AskSage API client (JDK HttpClient, Gson DTOs)
+  - AuthManager with PasswordSafe-backed credential storage and 24-hour token exchange
+  - Settings UI (Settings > Tools > Pymatic AskSage)
+  - Chat tool window with 3-way live mode toggle and dynamic model selector
+  - Add operator function for resource bundle key access in `MyBundle`
 
 ### Changed
 

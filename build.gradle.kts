@@ -15,3 +15,15 @@ dependencies {
         testFramework(TestFrameworkType.Platform)
     }
 }
+
+intellijPlatform {
+    signing {
+        certificateChainFile.set(
+            providers.environmentVariable("CERTIFICATE_CHAIN").map { layout.projectDirectory.file(it) },
+        )
+        privateKeyFile.set(
+            providers.environmentVariable("PRIVATE_KEY").map { layout.projectDirectory.file(it) },
+        )
+        password.set(providers.environmentVariable("PRIVATE_KEY_PASSWORD"))
+    }
+}

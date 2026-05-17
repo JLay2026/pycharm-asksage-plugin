@@ -52,8 +52,13 @@ object EditorContextService {
         return Pair(startLine, endLine)
     }
 
-    private fun detectLanguage(file: VirtualFile): String {
-        return when (file.extension?.lowercase()) {
+    internal fun detectLanguage(file: VirtualFile): String {
+        return detectLanguageFromFileName(file.name)
+    }
+
+    internal fun detectLanguageFromFileName(fileName: String): String {
+        val extension = if ('.' in fileName) fileName.substringAfterLast('.').lowercase() else null
+        return when (extension) {
             "kt", "kts" -> "Kotlin"
             "java" -> "Java"
             "py" -> "Python"
@@ -80,7 +85,7 @@ object EditorContextService {
             "md" -> "Markdown"
             "gradle" -> "Gradle"
             "toml" -> "TOML"
-            else -> file.extension ?: "Unknown"
+            else -> extension ?: "Unknown"
         }
     }
 
