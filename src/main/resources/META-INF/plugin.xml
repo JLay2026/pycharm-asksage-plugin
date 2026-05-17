@@ -68,6 +68,11 @@
             implementation="org.jetbrains.plugins.template.ui.statusbar.AskSageStatusBarWidgetFactory"
             id="AskSageStatus"
         />
+
+        <notificationGroup
+            id="AskSage Notifications"
+            displayType="BALLOON"
+        />
     </extensions>
 
     <actions>

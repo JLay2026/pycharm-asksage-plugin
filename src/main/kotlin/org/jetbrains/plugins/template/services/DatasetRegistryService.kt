@@ -10,8 +10,13 @@ import org.jetbrains.plugins.template.api.auth.AuthManager
 @Service(Service.Level.APP)
 class DatasetRegistryService {
 
+    @Volatile
     private var datasets: List<String> = emptyList()
+
+    @Volatile
     private var lastFetchTime: Long = 0
+
+    private val lock = Any()
 
     fun getDatasets(): List<String> = datasets
 
@@ -23,8 +28,10 @@ class DatasetRegistryService {
             val response = apiClient.getDatasets(token)
             val datasetList = response.response
             if (datasetList != null) {
-                datasets = datasetList.sorted()
-                lastFetchTime = System.currentTimeMillis()
+                synchronized(lock) {
+                    datasets = datasetList.sorted()
+                    lastFetchTime = System.currentTimeMillis()
+                }
                 LOG.info("Fetched ${datasets.size} datasets")
             }
         } catch (e: AskSageApiException) {

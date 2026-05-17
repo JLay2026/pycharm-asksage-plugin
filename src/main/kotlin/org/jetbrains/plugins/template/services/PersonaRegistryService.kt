@@ -11,8 +11,13 @@ import org.jetbrains.plugins.template.api.models.PersonaInfo
 @Service(Service.Level.APP)
 class PersonaRegistryService {
 
+    @Volatile
     private var personas: List<PersonaInfo> = emptyList()
+
+    @Volatile
     private var lastFetchTime: Long = 0
+
+    private val lock = Any()
 
     fun getPersonas(): List<PersonaInfo> = personas
 
@@ -24,8 +29,10 @@ class PersonaRegistryService {
             val response = apiClient.getPersonas(token)
             val personaList = response.response
             if (personaList != null) {
-                personas = personaList.sortedBy { it.name }
-                lastFetchTime = System.currentTimeMillis()
+                synchronized(lock) {
+                    personas = personaList.sortedBy { it.name }
+                    lastFetchTime = System.currentTimeMillis()
+                }
                 LOG.info("Fetched ${personas.size} personas")
             }
         } catch (e: AskSageApiException) {
