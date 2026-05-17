@@ -48,8 +48,21 @@
             serviceImplementation="org.jetbrains.plugins.template.services.ModelRegistryService"
         />
 
+        <applicationService
+            serviceImplementation="org.jetbrains.plugins.template.services.PersonaRegistryService"
+        />
+
+        <applicationService
+            serviceImplementation="org.jetbrains.plugins.template.services.DatasetRegistryService"
+        />
+
         <projectService
             serviceImplementation="org.jetbrains.plugins.template.services.ChatSessionService"
+        />
+
+        <statusBarWidgetFactory
+            implementation="org.jetbrains.plugins.template.ui.statusbar.AskSageStatusBarWidgetFactory"
+            id="AskSageStatus"
         />
     </extensions>
 </idea-plugin>

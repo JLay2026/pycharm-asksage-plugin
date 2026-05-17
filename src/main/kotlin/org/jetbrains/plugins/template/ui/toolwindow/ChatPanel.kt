@@ -10,16 +10,26 @@ import com.intellij.ui.components.JBTextArea
 import org.jetbrains.plugins.template.api.AskSageApiClient
 import org.jetbrains.plugins.template.api.AskSageApiException
 import org.jetbrains.plugins.template.api.auth.AuthManager
+import org.jetbrains.plugins.template.api.models.ModelInfo
 import org.jetbrains.plugins.template.api.models.QueryRequest
 import org.jetbrains.plugins.template.services.AskSageSettingsState
 import org.jetbrains.plugins.template.services.ChatMessage
 import org.jetbrains.plugins.template.services.ChatSessionService
+import org.jetbrains.plugins.template.services.DatasetRegistryService
 import org.jetbrains.plugins.template.services.MessageRole
 import org.jetbrains.plugins.template.services.ModelRegistryService
+import org.jetbrains.plugins.template.services.PersonaRegistryService
 import org.jetbrains.plugins.template.util.LiveMode
+import org.jetbrains.plugins.template.util.MarkdownRenderer
 import java.awt.BorderLayout
+import java.awt.Color
+import java.awt.Cursor
 import java.awt.Dimension
 import java.awt.FlowLayout
+import java.awt.event.KeyAdapter
+import java.awt.event.KeyEvent
+import java.awt.event.MouseAdapter
+import java.awt.event.MouseEvent
 import javax.swing.BorderFactory
 import javax.swing.Box
 import javax.swing.BoxLayout
@@ -29,6 +39,7 @@ import javax.swing.JPanel
 import javax.swing.JScrollBar
 import javax.swing.JTextPane
 import javax.swing.SwingUtilities
+import javax.swing.Timer
 import javax.swing.text.SimpleAttributeSet
 import javax.swing.text.StyleConstants
 
@@ -38,11 +49,12 @@ class ChatPanel(private val project: Project) : JPanel(BorderLayout()) {
     private val settings = AskSageSettingsState.getInstance()
     private val authManager = AuthManager.getInstance()
     private val modelRegistry = ModelRegistryService.getInstance()
+    private val personaRegistry = PersonaRegistryService.getInstance()
+    private val datasetRegistry = DatasetRegistryService.getInstance()
     private val apiClient = AskSageApiClient(settings.baseUrl)
 
     private val chatDisplay = JTextPane().apply {
         isEditable = false
-        contentType = "text/plain"
         border = BorderFactory.createEmptyBorder(8, 8, 8, 8)
     }
     private val chatScrollPane = JBScrollPane(chatDisplay)
@@ -63,36 +75,86 @@ class ChatPanel(private val project: Project) : JPanel(BorderLayout()) {
 
     private val liveModeToggle = LiveModeToggle(
         initialMode = LiveMode.fromValue(settings.defaultLiveMode),
-        onModeChanged = { /* persisted via selectedMode property */ }
+        onModeChanged = { /* persisted via selectedMode property */ },
     )
 
     private val modelSelector = ModelSelector(
-        onModeChanged@{ modelId ->
+        onModelChanged@{ modelId ->
             settings.defaultModel = modelId
-        }
+        },
     )
+
+    private var selectedPersonaId: Int? = if (settings.defaultPersona > 0) settings.defaultPersona else null
+    private val personaSelector = PersonaSelector(
+        onPersonaChanged@{ personaId ->
+            selectedPersonaId = personaId
+            settings.defaultPersona = personaId ?: 0
+        },
+    )
+
+    private var selectedDataset: String? = settings.defaultDataset.ifBlank { null }
+    private val datasetSelector = DatasetSelector(
+        onDatasetChanged@{ dataset ->
+            selectedDataset = dataset
+            settings.defaultDataset = dataset ?: ""
+        },
+    )
+
+    private val followUpPanel = JPanel().apply {
+        layout = BoxLayout(this, BoxLayout.Y_AXIS)
+        border = BorderFactory.createEmptyBorder(4, 8, 4, 8)
+        isVisible = false
+    }
 
     private val statusLabel = JLabel("Ready").apply {
         foreground = JBColor.GRAY
     }
 
+    private val elapsedLabel = JLabel("").apply {
+        foreground = JBColor.GRAY
+    }
+
+    private var streamingStartTime: Long = 0
+    private var elapsedTimer: Timer? = null
+    private var streamingDocOffset = 0
+
     init {
         setupUI()
         setupActions()
-        loadModels()
+        loadRegistries()
     }
 
     private fun setupUI() {
-        // Top toolbar: live mode toggle + model selector
-        val toolbar = JPanel().apply {
+        // Top toolbar row 1: live mode + model selector
+        val toolbarRow1 = JPanel().apply {
             layout = BoxLayout(this, BoxLayout.X_AXIS)
-            border = BorderFactory.createEmptyBorder(4, 4, 4, 4)
+            border = BorderFactory.createEmptyBorder(4, 4, 2, 4)
             add(liveModeToggle)
             add(Box.createHorizontalStrut(8))
             add(JLabel("Model:"))
             add(Box.createHorizontalStrut(4))
             add(modelSelector)
             add(Box.createHorizontalGlue())
+        }
+
+        // Top toolbar row 2: persona + dataset selectors
+        val toolbarRow2 = JPanel().apply {
+            layout = BoxLayout(this, BoxLayout.X_AXIS)
+            border = BorderFactory.createEmptyBorder(2, 4, 4, 4)
+            add(JLabel("Persona:"))
+            add(Box.createHorizontalStrut(4))
+            add(personaSelector)
+            add(Box.createHorizontalStrut(12))
+            add(JLabel("Dataset:"))
+            add(Box.createHorizontalStrut(4))
+            add(datasetSelector)
+            add(Box.createHorizontalGlue())
+        }
+
+        val toolbar = JPanel().apply {
+            layout = BoxLayout(this, BoxLayout.Y_AXIS)
+            add(toolbarRow1)
+            add(toolbarRow2)
         }
 
         // Chat display area
@@ -110,27 +172,36 @@ class ChatPanel(private val project: Project) : JPanel(BorderLayout()) {
         val inputPanel = JPanel(BorderLayout()).apply {
             border = BorderFactory.createCompoundBorder(
                 BorderFactory.createMatteBorder(1, 0, 0, 0, JBColor.border()),
-                BorderFactory.createEmptyBorder(4, 4, 4, 4)
+                BorderFactory.createEmptyBorder(4, 4, 4, 4),
             )
-            add(JBScrollPane(inputArea).apply {
-                preferredSize = Dimension(0, 70)
-                border = BorderFactory.createLineBorder(JBColor.border())
-            }, BorderLayout.CENTER)
+            add(
+                JBScrollPane(inputArea).apply {
+                    preferredSize = Dimension(0, 70)
+                    border = BorderFactory.createLineBorder(JBColor.border())
+                },
+                BorderLayout.CENTER,
+            )
             add(buttonPanel, BorderLayout.EAST)
         }
 
-        // Status bar
+        // Status bar with elapsed time
         val statusPanel = JPanel(FlowLayout(FlowLayout.LEFT)).apply {
             border = BorderFactory.createMatteBorder(1, 0, 0, 0, JBColor.border())
             add(statusLabel)
+            add(Box.createHorizontalStrut(12))
+            add(elapsedLabel)
+        }
+
+        // Bottom area: follow-up panel + input + status
+        val bottomArea = JPanel(BorderLayout()).apply {
+            add(followUpPanel, BorderLayout.NORTH)
+            add(inputPanel, BorderLayout.CENTER)
+            add(statusPanel, BorderLayout.SOUTH)
         }
 
         add(toolbar, BorderLayout.NORTH)
         add(chatScrollPane, BorderLayout.CENTER)
-        add(JPanel(BorderLayout()).apply {
-            add(inputPanel, BorderLayout.CENTER)
-            add(statusPanel, BorderLayout.SOUTH)
-        }, BorderLayout.SOUTH)
+        add(bottomArea, BorderLayout.SOUTH)
 
         // Restore chat history
         for (msg in chatSessionService.getMessages()) {
@@ -142,10 +213,9 @@ class ChatPanel(private val project: Project) : JPanel(BorderLayout()) {
         sendButton.addActionListener { sendMessage() }
         clearButton.addActionListener { clearChat() }
 
-        // Enter to send (Shift+Enter for newline)
-        inputArea.addKeyListener(object : java.awt.event.KeyAdapter() {
-            override fun keyPressed(e: java.awt.event.KeyEvent) {
-                if (e.keyCode == java.awt.event.KeyEvent.VK_ENTER && !e.isShiftDown) {
+        inputArea.addKeyListener(object : KeyAdapter() {
+            override fun keyPressed(e: KeyEvent) {
+                if (e.keyCode == KeyEvent.VK_ENTER && !e.isShiftDown) {
                     e.consume()
                     sendMessage()
                 }
@@ -158,22 +228,28 @@ class ChatPanel(private val project: Project) : JPanel(BorderLayout()) {
         if (message.isEmpty()) return
 
         if (!authManager.isConfigured()) {
-            appendMessage(MessageRole.ERROR, "Please configure your API key and email in Settings > Tools > Pymatic AskSage", null)
+            appendMessage(
+                MessageRole.ERROR,
+                "Please configure your API key and email in Settings > Tools > Pymatic AskSage",
+                null,
+            )
             return
         }
 
-        val selectedModel = (modelSelector.selectedItem as? org.jetbrains.plugins.template.api.models.ModelInfo)?.id
+        val selectedModel = (modelSelector.selectedItem as? ModelInfo)?.id
         if (selectedModel.isNullOrBlank()) {
             appendMessage(MessageRole.ERROR, "Please select a model", null)
             return
         }
 
         inputArea.text = ""
+        followUpPanel.isVisible = false
         appendMessage(MessageRole.USER, message, null)
         chatSessionService.addMessage(ChatMessage(MessageRole.USER, message))
 
         setLoading(true)
         statusLabel.text = "Querying AskSage..."
+        startElapsedTimer()
 
         ApplicationManager.getApplication().executeOnPooledThread {
             try {
@@ -181,75 +257,178 @@ class ChatPanel(private val project: Project) : JPanel(BorderLayout()) {
                 val token = authManager.getAccessToken(apiClient)
                     ?: throw AskSageApiException("Authentication failed")
 
+                // Build context from conversation history for multi-turn
+                val conversationContext = chatSessionService.getConversationContext()
+                val contextualMessage = if (conversationContext.isNotBlank()) {
+                    "Previous conversation:\n$conversationContext\n\nCurrent question: $message"
+                } else {
+                    message
+                }
+
                 val queryRequest = QueryRequest(
                     model = selectedModel,
-                    message = message,
+                    message = contextualMessage,
                     live = liveModeToggle.selectedMode.value,
-                    dataset = settings.defaultDataset.ifBlank { null },
-                    persona = if (settings.defaultPersona > 0) settings.defaultPersona else null,
+                    dataset = selectedDataset,
+                    persona = selectedPersonaId,
                     temperature = settings.temperature,
                     reasoningEffort = settings.reasoningEffort,
                 )
 
-                val response = apiClient.query(token, queryRequest)
-                val responseText = response.response ?: response.message ?: "No response received"
+                // Try streaming first, fall back to non-streaming
+                val responseText = StringBuilder()
+
+                try {
+                    SwingUtilities.invokeAndWait {
+                        appendStreamingHeader(selectedModel)
+                    }
+
+                    apiClient.queryStreaming(token, queryRequest) { chunk ->
+                        responseText.append(chunk)
+                        SwingUtilities.invokeLater {
+                            updateStreamingContent(responseText.toString())
+                        }
+                    }
+                } catch (e: AskSageApiException) {
+                    LOG.info("Streaming not available, falling back to standard query", e)
+                    responseText.clear()
+                    val response = apiClient.query(token, queryRequest)
+                    responseText.append(response.response ?: response.message ?: "No response received")
+
+                    SwingUtilities.invokeAndWait {
+                        if (streamingDocOffset > 0) {
+                            val doc = chatDisplay.styledDocument
+                            doc.remove(streamingDocOffset, doc.length - streamingDocOffset)
+                            streamingDocOffset = 0
+                        }
+                        appendMessage(MessageRole.ASSISTANT, responseText.toString(), selectedModel)
+                    }
+                }
+
+                val finalResponse = responseText.toString()
+                if (finalResponse.isNotBlank() && streamingDocOffset > 0) {
+                    SwingUtilities.invokeLater {
+                        finalizeStreamingContent(finalResponse)
+                    }
+                }
+
+                chatSessionService.addMessage(
+                    ChatMessage(MessageRole.ASSISTANT, finalResponse, selectedModel),
+                )
 
                 SwingUtilities.invokeLater {
-                    appendMessage(MessageRole.ASSISTANT, responseText, selectedModel)
-                    chatSessionService.addMessage(ChatMessage(MessageRole.ASSISTANT, responseText, selectedModel))
                     setLoading(false)
+                    stopElapsedTimer()
                     statusLabel.text = "Ready"
                 }
+
+                fetchFollowUpQuestions(token, message, finalResponse, selectedModel)
             } catch (e: AskSageApiException) {
                 LOG.warn("Query failed", e)
                 SwingUtilities.invokeLater {
                     appendMessage(MessageRole.ERROR, "Error: ${e.message}", null)
                     chatSessionService.addMessage(ChatMessage(MessageRole.ERROR, "Error: ${e.message}"))
                     setLoading(false)
+                    stopElapsedTimer()
                     statusLabel.text = "Error"
                 }
             }
         }
     }
 
+    private fun appendStreamingHeader(model: String) {
+        val doc = chatDisplay.styledDocument
+        val headerAttrs = SimpleAttributeSet()
+        StyleConstants.setBold(headerAttrs, true)
+        StyleConstants.setForeground(
+            headerAttrs,
+            JBColor(Color(0, 100, 0), Color(100, 200, 100)),
+        )
+
+        if (doc.length > 0) {
+            doc.insertString(doc.length, "\n\n", null)
+        }
+        doc.insertString(doc.length, "AskSage [$model]:\n", headerAttrs)
+        streamingDocOffset = doc.length
+    }
+
+    private fun updateStreamingContent(content: String) {
+        if (streamingDocOffset <= 0) return
+        val doc = chatDisplay.styledDocument
+        val currentLen = doc.length
+        if (currentLen > streamingDocOffset) {
+            doc.remove(streamingDocOffset, currentLen - streamingDocOffset)
+        }
+        doc.insertString(streamingDocOffset, content, null)
+        scrollToBottom()
+    }
+
+    private fun finalizeStreamingContent(content: String) {
+        if (streamingDocOffset <= 0) return
+        val doc = chatDisplay.styledDocument
+        val currentLen = doc.length
+        if (currentLen > streamingDocOffset) {
+            doc.remove(streamingDocOffset, currentLen - streamingDocOffset)
+        }
+        val tempPane = JTextPane()
+        MarkdownRenderer.render(tempPane, content)
+        val srcDoc = tempPane.styledDocument
+        for (i in 0 until srcDoc.length) {
+            val attrs = srcDoc.getCharacterElement(i).attributes
+            val char = srcDoc.getText(i, 1)
+            doc.insertString(doc.length, char, attrs)
+        }
+        streamingDocOffset = 0
+        scrollToBottom()
+    }
+
     private fun appendMessage(role: MessageRole, content: String, model: String?) {
         val doc = chatDisplay.styledDocument
-        val attrs = SimpleAttributeSet()
 
-        val prefix = when (role) {
-            MessageRole.USER -> {
-                StyleConstants.setBold(attrs, true)
-                StyleConstants.setForeground(attrs, JBColor.foreground())
-                "You"
-            }
-            MessageRole.ASSISTANT -> {
-                StyleConstants.setForeground(attrs, JBColor(java.awt.Color(0, 100, 0), java.awt.Color(100, 200, 100)))
-                val modelTag = if (model != null) " [$model]" else ""
-                "AskSage$modelTag"
-            }
-            MessageRole.ERROR -> {
-                StyleConstants.setForeground(attrs, JBColor.RED)
-                StyleConstants.setItalic(attrs, true)
-                "Error"
-            }
-        }
-
-        val headerAttrs = SimpleAttributeSet(attrs)
+        val prefix: String
+        val headerAttrs = SimpleAttributeSet()
         StyleConstants.setBold(headerAttrs, true)
 
-        val contentAttrs = SimpleAttributeSet()
-        if (role == MessageRole.ERROR) {
-            StyleConstants.setForeground(contentAttrs, JBColor.RED)
-            StyleConstants.setItalic(contentAttrs, true)
+        when (role) {
+            MessageRole.USER -> {
+                StyleConstants.setForeground(headerAttrs, JBColor.foreground())
+                prefix = "You"
+            }
+            MessageRole.ASSISTANT -> {
+                StyleConstants.setForeground(
+                    headerAttrs,
+                    JBColor(Color(0, 100, 0), Color(100, 200, 100)),
+                )
+                val modelTag = if (model != null) " [$model]" else ""
+                prefix = "AskSage$modelTag"
+            }
+            MessageRole.ERROR -> {
+                StyleConstants.setForeground(headerAttrs, JBColor.RED)
+                StyleConstants.setItalic(headerAttrs, true)
+                prefix = "Error"
+            }
         }
 
         if (doc.length > 0) {
             doc.insertString(doc.length, "\n\n", null)
         }
         doc.insertString(doc.length, "$prefix:\n", headerAttrs)
-        doc.insertString(doc.length, content, contentAttrs)
 
-        // Scroll to bottom
+        if (role == MessageRole.ASSISTANT) {
+            MarkdownRenderer.render(chatDisplay, content)
+        } else if (role == MessageRole.ERROR) {
+            val errorAttrs = SimpleAttributeSet()
+            StyleConstants.setForeground(errorAttrs, JBColor.RED)
+            StyleConstants.setItalic(errorAttrs, true)
+            doc.insertString(doc.length, content, errorAttrs)
+        } else {
+            doc.insertString(doc.length, content, null)
+        }
+
+        scrollToBottom()
+    }
+
+    private fun scrollToBottom() {
         SwingUtilities.invokeLater {
             val scrollBar: JScrollBar = chatScrollPane.verticalScrollBar
             scrollBar.value = scrollBar.maximum
@@ -259,7 +438,9 @@ class ChatPanel(private val project: Project) : JPanel(BorderLayout()) {
     private fun clearChat() {
         chatSessionService.clearHistory()
         chatDisplay.text = ""
+        followUpPanel.isVisible = false
         statusLabel.text = "Ready"
+        stopElapsedTimer()
     }
 
     private fun setLoading(loading: Boolean) {
@@ -267,11 +448,75 @@ class ChatPanel(private val project: Project) : JPanel(BorderLayout()) {
         inputArea.isEnabled = !loading
     }
 
-    private fun loadModels() {
+    private fun startElapsedTimer() {
+        streamingStartTime = System.currentTimeMillis()
+        elapsedLabel.text = "0s"
+        elapsedTimer?.stop()
+        elapsedTimer = Timer(1000) {
+            val elapsed = (System.currentTimeMillis() - streamingStartTime) / 1000
+            elapsedLabel.text = "${elapsed}s"
+        }
+        elapsedTimer?.start()
+    }
+
+    private fun stopElapsedTimer() {
+        elapsedTimer?.stop()
+        elapsedTimer = null
+        elapsedLabel.text = ""
+    }
+
+    private fun fetchFollowUpQuestions(token: String, message: String, response: String, model: String) {
+        ApplicationManager.getApplication().executeOnPooledThread {
+            try {
+                val followUpResponse = apiClient.getFollowUpQuestions(token, message, response, model)
+                val questions = followUpResponse.response
+                if (!questions.isNullOrEmpty()) {
+                    SwingUtilities.invokeLater {
+                        showFollowUpQuestions(questions)
+                    }
+                }
+            } catch (e: AskSageApiException) {
+                LOG.debug("Failed to fetch follow-up questions", e)
+            }
+        }
+    }
+
+    private fun showFollowUpQuestions(questions: List<String>) {
+        followUpPanel.removeAll()
+
+        val headerLabel = JLabel("Suggested follow-ups:").apply {
+            foreground = JBColor.GRAY
+            border = BorderFactory.createEmptyBorder(4, 0, 4, 0)
+        }
+        followUpPanel.add(headerLabel)
+
+        for (question in questions.take(3)) {
+            val questionLabel = JLabel("<html><u>$question</u></html>").apply {
+                foreground = JBColor(Color(30, 100, 180), Color(100, 160, 230))
+                cursor = Cursor.getPredefinedCursor(Cursor.HAND_CURSOR)
+                border = BorderFactory.createEmptyBorder(2, 8, 2, 0)
+                addMouseListener(object : MouseAdapter() {
+                    override fun mouseClicked(e: MouseEvent) {
+                        inputArea.text = question
+                        sendMessage()
+                    }
+                })
+            }
+            followUpPanel.add(questionLabel)
+        }
+
+        followUpPanel.isVisible = true
+        followUpPanel.revalidate()
+        followUpPanel.repaint()
+    }
+
+    private fun loadRegistries() {
         if (!authManager.isConfigured()) return
 
         ApplicationManager.getApplication().executeOnPooledThread {
             apiClient.updateBaseUrl(settings.baseUrl)
+
+            // Load models
             if (modelRegistry.needsRefresh()) {
                 modelRegistry.refreshModels(apiClient)
             }
@@ -281,6 +526,27 @@ class ChatPanel(private val project: Project) : JPanel(BorderLayout()) {
                 if (settings.defaultModel.isNotBlank()) {
                     modelSelector.setSelectedModelId(settings.defaultModel)
                 }
+            }
+
+            // Load personas
+            if (personaRegistry.needsRefresh()) {
+                personaRegistry.refreshPersonas(apiClient)
+            }
+            val personas = personaRegistry.getPersonas()
+            SwingUtilities.invokeLater {
+                personaSelector.updatePersonas(personas)
+                if (settings.defaultPersona > 0) {
+                    personaSelector.setSelectedPersonaId(settings.defaultPersona)
+                }
+            }
+
+            // Load datasets
+            if (datasetRegistry.needsRefresh()) {
+                datasetRegistry.refreshDatasets(apiClient)
+            }
+            val datasets = datasetRegistry.getDatasets()
+            SwingUtilities.invokeLater {
+                datasetSelector.updateDatasets(datasets)
             }
         }
     }
