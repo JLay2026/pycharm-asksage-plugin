@@ -1,7 +1,6 @@
 package org.jetbrains.plugins.template.util
 
 import com.intellij.ui.JBColor
-import java.awt.Color
 import java.awt.Font
 import javax.swing.JTextPane
 import javax.swing.text.SimpleAttributeSet
@@ -9,6 +8,14 @@ import javax.swing.text.StyleConstants
 import javax.swing.text.StyledDocument
 
 object MarkdownRenderer {
+    private val CODE_HEADER_BG = JBColor(0x282C34, 0x282C34)
+    private val CODE_HEADER_FG = JBColor(0x969696, 0x969696)
+    private val CODE_BLOCK_BG = JBColor(0xF5F5F5, 0x2B2B2B)
+    private val CODE_BLOCK_FG = JBColor(0x323232, 0xC8C8C8)
+    private val BLOCKQUOTE_FG = JBColor(0x646464, 0xA0A0A0)
+    private val HR_COLOR = JBColor(0xC8C8C8, 0x505050)
+    private val INLINE_CODE_BG = JBColor(0xF0F0F0, 0x323232)
+    private val INLINE_CODE_FG = JBColor(0xC82828, 0xE67878)
 
     fun render(textPane: JTextPane, markdown: String) {
         val doc = textPane.styledDocument
@@ -76,8 +83,8 @@ object MarkdownRenderer {
 
     private fun appendCodeBlock(doc: StyledDocument, code: String, language: String) {
         val headerAttrs = SimpleAttributeSet()
-        StyleConstants.setBackground(headerAttrs, JBColor(Color(40, 44, 52), Color(40, 44, 52)))
-        StyleConstants.setForeground(headerAttrs, JBColor(Color(150, 150, 150), Color(150, 150, 150)))
+        StyleConstants.setBackground(headerAttrs, CODE_HEADER_BG)
+        StyleConstants.setForeground(headerAttrs, CODE_HEADER_FG)
         StyleConstants.setFontSize(headerAttrs, 11)
 
         if (language.isNotBlank()) {
@@ -89,8 +96,8 @@ object MarkdownRenderer {
         val codeAttrs = SimpleAttributeSet()
         StyleConstants.setFontFamily(codeAttrs, Font.MONOSPACED)
         StyleConstants.setFontSize(codeAttrs, 12)
-        StyleConstants.setBackground(codeAttrs, JBColor(Color(245, 245, 245), Color(43, 43, 43)))
-        StyleConstants.setForeground(codeAttrs, JBColor(Color(50, 50, 50), Color(200, 200, 200)))
+        StyleConstants.setBackground(codeAttrs, CODE_BLOCK_BG)
+        StyleConstants.setForeground(codeAttrs, CODE_BLOCK_FG)
         doc.insertString(doc.length, code, codeAttrs)
         doc.insertString(doc.length, "\n", null)
     }
@@ -106,14 +113,14 @@ object MarkdownRenderer {
     private fun appendBlockquote(doc: StyledDocument, text: String) {
         val attrs = SimpleAttributeSet()
         StyleConstants.setItalic(attrs, true)
-        StyleConstants.setForeground(attrs, JBColor(Color(100, 100, 100), Color(160, 160, 160)))
+        StyleConstants.setForeground(attrs, BLOCKQUOTE_FG)
         StyleConstants.setLeftIndent(attrs, 16f)
         doc.insertString(doc.length, "\u2502 $text", attrs)
     }
 
     private fun appendHorizontalRule(doc: StyledDocument) {
         val attrs = SimpleAttributeSet()
-        StyleConstants.setForeground(attrs, JBColor(Color(200, 200, 200), Color(80, 80, 80)))
+        StyleConstants.setForeground(attrs, HR_COLOR)
         doc.insertString(doc.length, "\u2500".repeat(40), attrs)
     }
 
@@ -155,8 +162,8 @@ object MarkdownRenderer {
                     if (end > i) {
                         val attrs = SimpleAttributeSet()
                         StyleConstants.setFontFamily(attrs, Font.MONOSPACED)
-                        StyleConstants.setBackground(attrs, JBColor(Color(240, 240, 240), Color(50, 50, 50)))
-                        StyleConstants.setForeground(attrs, JBColor(Color(200, 40, 40), Color(230, 120, 120)))
+                        StyleConstants.setBackground(attrs, INLINE_CODE_BG)
+                        StyleConstants.setForeground(attrs, INLINE_CODE_FG)
                         doc.insertString(doc.length, text.substring(i + 1, end), attrs)
                         i = end + 1
                     } else {

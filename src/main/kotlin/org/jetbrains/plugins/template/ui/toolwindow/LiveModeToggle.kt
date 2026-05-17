@@ -2,7 +2,6 @@ package org.jetbrains.plugins.template.ui.toolwindow
 
 import com.intellij.ui.JBColor
 import org.jetbrains.plugins.template.util.LiveMode
-import java.awt.Color
 import java.awt.Cursor
 import java.awt.Dimension
 import java.awt.FlowLayout
@@ -63,12 +62,18 @@ class LiveModeToggle(
         }
     }
 
-    private fun getColorForMode(mode: LiveMode): Color {
+    private fun getColorForMode(mode: LiveMode): JBColor {
         return when (mode) {
-            LiveMode.NO_LIVE -> JBColor(Color(108, 117, 125), Color(108, 117, 125))
-            LiveMode.LIVE -> JBColor(Color(40, 167, 69), Color(40, 167, 69))
-            LiveMode.LIVE_PLUS -> JBColor(Color(0, 123, 255), Color(0, 123, 255))
+            LiveMode.NO_LIVE -> MODE_GRAY
+            LiveMode.LIVE -> MODE_GREEN
+            LiveMode.LIVE_PLUS -> MODE_BLUE
         }
+    }
+
+    companion object {
+        private val MODE_GRAY = JBColor(0x6C757D, 0x6C757D)
+        private val MODE_GREEN = JBColor(0x28A745, 0x28A745)
+        private val MODE_BLUE = JBColor(0x007BFF, 0x007BFF)
     }
 
     fun setMode(mode: LiveMode) {

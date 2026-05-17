@@ -12,7 +12,6 @@ import org.jetbrains.plugins.template.api.models.TokenUsageData
 import org.jetbrains.plugins.template.services.AskSageSettingsState
 import org.jetbrains.plugins.template.util.NotificationHelper
 import java.awt.BorderLayout
-import java.awt.Color
 import java.awt.Dimension
 import java.awt.Font
 import java.awt.Graphics
@@ -195,16 +194,16 @@ class TokenUsagePanel(private val project: Project) : JPanel(BorderLayout()) {
             val barY = (height - barHeight) / 2
 
             // Background
-            g2.color = JBColor(Color(230, 230, 230), Color(60, 60, 60))
+            g2.color = BAR_BACKGROUND
             g2.fillRoundRect(0, barY, width, barHeight, 8, 8)
 
             // Usage fill
             val fillWidth = (width * usageRatio).toInt()
             if (fillWidth > 0) {
                 val fillColor = when {
-                    usageRatio < 0.5 -> JBColor(Color(76, 175, 80), Color(76, 175, 80))
-                    usageRatio < 0.8 -> JBColor(Color(255, 193, 7), Color(255, 193, 7))
-                    else -> JBColor(Color(244, 67, 54), Color(244, 67, 54))
+                    usageRatio < 0.5 -> BAR_FILL_GREEN
+                    usageRatio < 0.8 -> BAR_FILL_YELLOW
+                    else -> BAR_FILL_RED
                 }
                 g2.color = fillColor
                 g2.fillRoundRect(0, barY, fillWidth, barHeight, 8, 8)
@@ -221,5 +220,9 @@ class TokenUsagePanel(private val project: Project) : JPanel(BorderLayout()) {
 
     companion object {
         private val LOG = logger<TokenUsagePanel>()
+        private val BAR_BACKGROUND = JBColor(0xE6E6E6, 0x3C3C3C)
+        private val BAR_FILL_GREEN = JBColor(0x4CAF50, 0x4CAF50)
+        private val BAR_FILL_YELLOW = JBColor(0xFFC107, 0xFFC107)
+        private val BAR_FILL_RED = JBColor(0xF44336, 0xF44336)
     }
 }

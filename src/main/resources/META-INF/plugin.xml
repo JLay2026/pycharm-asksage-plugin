@@ -30,7 +30,7 @@
             factoryClass="org.jetbrains.plugins.template.ui.toolwindow.AskSageToolWindowFactory"
             id="AskSage"
             anchor="right"
-            icon="AllIcons.Actions.Find"
+            icon="/icons/asksage.svg"
         />
 
         <applicationConfigurable
@@ -77,14 +77,14 @@
 
     <actions>
         <group id="AskSage.EditorContextMenu" text="AskSage" popup="true"
-               icon="AllIcons.Actions.Find">
+               icon="/icons/asksage.svg">
             <add-to-group group-id="EditorPopupMenu" anchor="last"/>
 
             <action id="AskSage.ExplainCode"
                     class="org.jetbrains.plugins.template.actions.ExplainCodeAction"
                     text="Explain Code"
                     description="Ask AskSage to explain the selected code or current file"
-                    icon="AllIcons.Actions.Preview">
+                    icon="/icons/chat.svg">
                 <keyboard-shortcut keymap="$default" first-keystroke="ctrl alt E"/>
             </action>
 
@@ -92,7 +92,7 @@
                     class="org.jetbrains.plugins.template.actions.RefactorCodeAction"
                     text="Refactor with AskSage"
                     description="Get refactoring suggestions from AskSage"
-                    icon="AllIcons.Actions.RefactoringBulb">
+                    icon="/icons/chat.svg">
                 <keyboard-shortcut keymap="$default" first-keystroke="ctrl alt R"/>
             </action>
 
@@ -100,7 +100,7 @@
                     class="org.jetbrains.plugins.template.actions.GenerateDocsAction"
                     text="Generate Documentation"
                     description="Generate documentation for the selected code or current file"
-                    icon="AllIcons.FileTypes.Text">
+                    icon="/icons/chat.svg">
                 <keyboard-shortcut keymap="$default" first-keystroke="ctrl alt D"/>
             </action>
 
@@ -108,7 +108,7 @@
                     class="org.jetbrains.plugins.template.actions.AskAboutFileAction"
                     text="Ask About This File..."
                     description="Ask AskSage a question about the current file"
-                    icon="AllIcons.Actions.Find">
+                    icon="/icons/chat.svg">
                 <keyboard-shortcut keymap="$default" first-keystroke="ctrl alt A"/>
             </action>
 
@@ -118,7 +118,7 @@
                     class="org.jetbrains.plugins.template.actions.SendSelectionToAskSageAction"
                     text="Send Selection to AskSage"
                     description="Send selected code to AskSage chat"
-                    icon="AllIcons.Actions.Forward">
+                    icon="/icons/chat.svg">
                 <keyboard-shortcut keymap="$default" first-keystroke="ctrl alt S"/>
             </action>
 
@@ -128,7 +128,7 @@
                     class="org.jetbrains.plugins.template.actions.AddToKnowledgeBaseAction"
                     text="Add to Knowledge Base"
                     description="Add selected code or current file to an AskSage dataset"
-                    icon="AllIcons.ToolbarDecorator.AddIcon">
+                    icon="/icons/plugin.svg">
                 <keyboard-shortcut keymap="$default" first-keystroke="ctrl alt K"/>
             </action>
         </group>
