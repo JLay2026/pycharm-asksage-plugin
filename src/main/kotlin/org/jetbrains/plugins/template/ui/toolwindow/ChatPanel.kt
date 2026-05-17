@@ -223,6 +223,11 @@ class ChatPanel(private val project: Project) : JPanel(BorderLayout()) {
         })
     }
 
+    fun sendMessageWithContext(message: String) {
+        inputArea.text = message
+        sendMessage()
+    }
+
     private fun sendMessage() {
         val message = inputArea.text.trim()
         if (message.isEmpty()) return
