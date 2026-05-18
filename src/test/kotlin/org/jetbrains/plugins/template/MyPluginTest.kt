@@ -8,7 +8,7 @@ class MyPluginTest : BasePlatformTestCase() {
 
     fun testPluginDescriptorIsValid() {
         val descriptor = PluginManagerCore.getPlugin(
-            PluginId.getId("org.jetbrains.plugins.template")
+            PluginId.getId("ai.bigbear.pymatic.asksage")
         )
         assertNotNull("Plugin descriptor should be loadable", descriptor)
         assertEquals("Pymatic AskSage", descriptor!!.name)
