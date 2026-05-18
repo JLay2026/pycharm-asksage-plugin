@@ -167,3 +167,68 @@ data class TokenUsageData(
     @SerializedName("daily_tokens") val dailyTokens: Long?,
     @SerializedName("remaining_tokens") val remainingTokens: Long?,
 )
+
+// --- OpenAI-Compatible ---
+
+data class OpenAiChatMessage(
+    val role: String,
+    val content: String,
+)
+
+data class OpenAiChatRequest(
+    val model: String,
+    val messages: List<OpenAiChatMessage>,
+    val temperature: Double = 0.7,
+    val stream: Boolean = false,
+)
+
+data class OpenAiChatResponse(
+    val id: String?,
+    val choices: List<OpenAiChoice>?,
+    val usage: OpenAiUsage?,
+)
+
+data class OpenAiChoice(
+    val index: Int?,
+    val message: OpenAiChatMessage?,
+    @SerializedName("finish_reason") val finishReason: String?,
+)
+
+data class OpenAiUsage(
+    @SerializedName("prompt_tokens") val promptTokens: Int?,
+    @SerializedName("completion_tokens") val completionTokens: Int?,
+    @SerializedName("total_tokens") val totalTokens: Int?,
+)
+
+// --- Anthropic-Compatible ---
+
+data class AnthropicMessage(
+    val role: String,
+    val content: String,
+)
+
+data class AnthropicRequest(
+    val model: String,
+    val messages: List<AnthropicMessage>,
+    @SerializedName("max_tokens") val maxTokens: Int = 4096,
+    val temperature: Double = 0.7,
+    val system: String? = null,
+)
+
+data class AnthropicResponse(
+    val id: String?,
+    val type: String?,
+    val role: String?,
+    val content: List<AnthropicContentBlock>?,
+    val usage: AnthropicUsage?,
+)
+
+data class AnthropicContentBlock(
+    val type: String?,
+    val text: String?,
+)
+
+data class AnthropicUsage(
+    @SerializedName("input_tokens") val inputTokens: Int?,
+    @SerializedName("output_tokens") val outputTokens: Int?,
+)

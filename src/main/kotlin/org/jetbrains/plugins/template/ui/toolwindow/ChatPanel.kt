@@ -19,6 +19,8 @@ import org.jetbrains.plugins.template.services.DatasetRegistryService
 import org.jetbrains.plugins.template.services.MessageRole
 import org.jetbrains.plugins.template.services.ModelRegistryService
 import org.jetbrains.plugins.template.services.PersonaRegistryService
+import org.jetbrains.plugins.template.services.ProjectContextService
+import org.jetbrains.plugins.template.services.PromptTemplate
 import org.jetbrains.plugins.template.util.LiveMode
 import org.jetbrains.plugins.template.util.MarkdownRenderer
 import org.jetbrains.plugins.template.util.NotificationHelper
@@ -117,6 +119,15 @@ class ChatPanel(private val project: Project) : JPanel(BorderLayout()) {
         },
     )
 
+    private var selectedTemplate: PromptTemplate? = null
+    private val templateSelector = PromptTemplateSelector(
+        onTemplateChanged@{ template ->
+            selectedTemplate = template
+        },
+    )
+
+    private val projectContextService = project.service<ProjectContextService>()
+
     private val followUpPanel = JPanel().apply {
         layout = BoxLayout(this, BoxLayout.Y_AXIS)
         border = BorderFactory.createEmptyBorder(4, 8, 4, 8)
@@ -157,7 +168,7 @@ class ChatPanel(private val project: Project) : JPanel(BorderLayout()) {
         // Top toolbar row 2: persona + dataset selectors
         val toolbarRow2 = JPanel().apply {
             layout = BoxLayout(this, BoxLayout.X_AXIS)
-            border = BorderFactory.createEmptyBorder(2, 4, 4, 4)
+            border = BorderFactory.createEmptyBorder(2, 4, 2, 4)
             add(JLabel("Persona:"))
             add(Box.createHorizontalStrut(4))
             add(personaSelector)
@@ -168,10 +179,21 @@ class ChatPanel(private val project: Project) : JPanel(BorderLayout()) {
             add(Box.createHorizontalGlue())
         }
 
+        // Top toolbar row 3: prompt template selector
+        val toolbarRow3 = JPanel().apply {
+            layout = BoxLayout(this, BoxLayout.X_AXIS)
+            border = BorderFactory.createEmptyBorder(2, 4, 4, 4)
+            add(JLabel("Template:"))
+            add(Box.createHorizontalStrut(4))
+            add(templateSelector)
+            add(Box.createHorizontalGlue())
+        }
+
         val toolbar = JPanel().apply {
             layout = BoxLayout(this, BoxLayout.Y_AXIS)
             add(toolbarRow1)
             add(toolbarRow2)
+            add(toolbarRow3)
         }
 
         // Chat display area
@@ -293,12 +315,17 @@ class ChatPanel(private val project: Project) : JPanel(BorderLayout()) {
                     message
                 }
 
+                // Add project context prefix for multi-project awareness
+                val projectPrefix = projectContextService.buildContextPrefix()
+                val fullMessage = projectPrefix + contextualMessage
+
                 val queryRequest = QueryRequest(
                     model = selectedModel,
-                    message = contextualMessage,
+                    message = fullMessage,
                     live = liveModeToggle.selectedMode.value,
                     dataset = selectedDataset,
                     persona = selectedPersonaId,
+                    systemPrompt = selectedTemplate?.systemPrompt,
                     temperature = settings.temperature,
                     reasoningEffort = settings.reasoningEffort,
                 )
@@ -600,44 +627,79 @@ class ChatPanel(private val project: Project) : JPanel(BorderLayout()) {
             return
         }
 
-        val markdown = buildString {
-            appendLine("# AskSage Conversation")
-            appendLine()
-            for (msg in messages) {
-                when (msg.role) {
-                    MessageRole.USER -> {
-                        appendLine("## You")
-                        appendLine(msg.content)
-                        appendLine()
-                    }
-                    MessageRole.ASSISTANT -> {
-                        val modelTag = if (msg.model != null) " [${msg.model}]" else ""
-                        appendLine("## AskSage$modelTag")
-                        appendLine(msg.content)
-                        appendLine()
-                    }
-                    MessageRole.ERROR -> {
-                        appendLine("> **Error:** ${msg.content}")
-                        appendLine()
-                    }
-                }
-            }
-        }
-
         val fileChooser = JFileChooser().apply {
             dialogTitle = "Export Conversation"
+            addChoosableFileFilter(FileNameExtensionFilter("Markdown files (*.md)", "md"))
+            addChoosableFileFilter(FileNameExtensionFilter("JSON files (*.json)", "json"))
             fileFilter = FileNameExtensionFilter("Markdown files (*.md)", "md")
             selectedFile = java.io.File("asksage-conversation.md")
         }
 
         if (fileChooser.showSaveDialog(this) == JFileChooser.APPROVE_OPTION) {
             var file = fileChooser.selectedFile
-            if (!file.name.endsWith(".md")) {
-                file = java.io.File(file.absolutePath + ".md")
+            val isJson = fileChooser.fileFilter.description.contains("JSON") ||
+                file.name.endsWith(".json")
+
+            if (isJson) {
+                if (!file.name.endsWith(".json")) {
+                    file = java.io.File(file.absolutePath + ".json")
+                }
+                file.writeText(exportAsJson(messages))
+            } else {
+                if (!file.name.endsWith(".md")) {
+                    file = java.io.File(file.absolutePath + ".md")
+                }
+                file.writeText(exportAsMarkdown(messages))
             }
-            file.writeText(markdown)
             statusLabel.text = "Conversation exported to ${file.name}"
         }
+    }
+
+    private fun exportAsMarkdown(messages: List<ChatMessage>): String {
+        val dateFormat = java.text.SimpleDateFormat("yyyy-MM-dd HH:mm:ss")
+        return buildString {
+            appendLine("# AskSage Conversation")
+            appendLine("*Exported: ${dateFormat.format(java.util.Date())}*")
+            appendLine("*Project: ${project.name}*")
+            appendLine()
+            for (msg in messages) {
+                val ts = dateFormat.format(java.util.Date(msg.timestamp))
+                when (msg.role) {
+                    MessageRole.USER -> {
+                        appendLine("## You *($ts)*")
+                        appendLine(msg.content)
+                        appendLine()
+                    }
+                    MessageRole.ASSISTANT -> {
+                        val modelTag = if (msg.model != null) " [${msg.model}]" else ""
+                        appendLine("## AskSage$modelTag *($ts)*")
+                        appendLine(msg.content)
+                        appendLine()
+                    }
+                    MessageRole.ERROR -> {
+                        appendLine("> **Error** *($ts)*: ${msg.content}")
+                        appendLine()
+                    }
+                }
+            }
+        }
+    }
+
+    private fun exportAsJson(messages: List<ChatMessage>): String {
+        val dateFormat = java.text.SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss'Z'")
+        val export = mapOf(
+            "project" to project.name,
+            "exportedAt" to dateFormat.format(java.util.Date()),
+            "messages" to messages.map { msg ->
+                mapOf(
+                    "role" to msg.role.name.lowercase(),
+                    "content" to msg.content,
+                    "model" to msg.model,
+                    "timestamp" to dateFormat.format(java.util.Date(msg.timestamp)),
+                )
+            },
+        )
+        return com.google.gson.GsonBuilder().setPrettyPrinting().create().toJson(export)
     }
 
     companion object {

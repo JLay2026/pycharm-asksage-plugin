@@ -1,6 +1,6 @@
 <!-- Plugin Configuration File. Read more: https://plugins.jetbrains.com/docs/intellij/plugin-configuration-file.html -->
 <idea-plugin>
-    <id>org.jetbrains.plugins.template</id>
+    <id>ai.bigbear.pymatic.asksage</id>
     <name>Pymatic AskSage</name>
     <vendor>BigBear.ai</vendor>
     <description><![CDATA[
@@ -62,6 +62,14 @@
 
         <projectService
             serviceImplementation="org.jetbrains.plugins.template.services.ChatSessionService"
+        />
+
+        <projectService
+            serviceImplementation="org.jetbrains.plugins.template.services.ProjectContextService"
+        />
+
+        <applicationService
+            serviceImplementation="org.jetbrains.plugins.template.services.PromptTemplateService"
         />
 
         <statusBarWidgetFactory
