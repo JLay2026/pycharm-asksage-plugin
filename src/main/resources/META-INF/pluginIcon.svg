@@ -1,0 +1,12 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="40" height="40" viewBox="0 0 40 40">
+  <defs>
+    <linearGradient id="bg" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#4A90D9"/>
+      <stop offset="100%" stop-color="#357ABD"/>
+    </linearGradient>
+  </defs>
+  <rect width="40" height="40" rx="8" fill="url(#bg)"/>
+  <circle cx="20" cy="18" r="10" fill="none" stroke="#FFFFFF" stroke-width="2"/>
+  <path d="M14 15.5C14 14.12 15.12 13 16.5 13h7C24.88 13 26 14.12 26 15.5v2C26 18.88 24.88 20 23.5 20H20.5l-2.5 2.5V20H16.5C15.12 20 14 18.88 14 17.5V15.5z" fill="#FFFFFF"/>
+  <text x="20" y="35" text-anchor="middle" font-family="Arial,sans-serif" font-size="6" font-weight="bold" fill="#FFFFFF">ASK</text>
+</svg>

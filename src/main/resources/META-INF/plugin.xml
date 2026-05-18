@@ -2,23 +2,37 @@
 <idea-plugin>
     <id>ai.bigbear.pymatic.asksage</id>
     <name>Pymatic AskSage</name>
-    <vendor>BigBear.ai</vendor>
+    <vendor email="jason.layman@bigbear.ai" url="https://github.com/DigiSpark-Advisory/pymatic-asksage-plugin">BigBear.ai</vendor>
     <description><![CDATA[
-        <p><b>Pymatic AskSage</b> integrates the AskSage.ai API directly into your JetBrains IDE,
-        providing conversational AI assistance with user-selectable internet access modes and
-        dynamic model selection.</p>
+        <p><b>Pymatic AskSage</b> integrates the <a href="https://asksage.ai">AskSage.ai</a> API directly into your
+        JetBrains IDE, providing conversational AI assistance with user-selectable internet access modes and
+        dynamic model selection across all major AI providers.</p>
 
-        <h3>Features</h3>
+        <h3>Key Features</h3>
         <ul>
-            <li><b>Live Mode Toggle</b> - Switch between No Live (offline), Live (web search), and Live+ (deep research) modes</li>
-            <li><b>Model Selection</b> - Choose from all available AI models, dynamically fetched from AskSage</li>
-            <li><b>Chat Interface</b> - Conversational AI chat directly in your IDE tool window</li>
-            <li><b>Plugin Browser</b> - Browse and execute AskSage plugins with results rendered inline</li>
-            <li><b>Agent Execution</b> - Run AskSage agents for complex multi-step tasks</li>
-            <li><b>Knowledge Base Training</b> - Add code from the editor directly to your AskSage datasets</li>
-            <li><b>Token Usage Dashboard</b> - Monitor monthly, daily, and remaining token usage</li>
-            <li><b>Secure Authentication</b> - API key stored securely via IntelliJ PasswordSafe</li>
+            <li><b>Live Mode Toggle</b> — Switch between No Live (offline), Live (web search), and Live+ (deep research) modes</li>
+            <li><b>Model Selection</b> — Choose from all available AI models (OpenAI, Anthropic, Google, etc.), dynamically fetched from AskSage</li>
+            <li><b>Chat Interface</b> — Streaming responses with markdown rendering, multi-turn conversation history, and follow-up suggestions</li>
+            <li><b>Prompt Templates</b> — Built-in templates for Code Review, Security Audit, Performance Analysis, Unit Test Generation, Architecture Review, and more</li>
+            <li><b>Editor Integration</b> — Right-click context menu: Explain Code, Refactor, Generate Docs, Ask About File, Send Selection (with keyboard shortcuts)</li>
+            <li><b>Plugin Browser</b> — Browse and execute AskSage plugins with results rendered inline</li>
+            <li><b>Agent Execution</b> — Run AskSage agents for complex multi-step tasks</li>
+            <li><b>Knowledge Base Training</b> — Add code from the editor directly to your AskSage datasets</li>
+            <li><b>Token Usage Dashboard</b> — Monitor monthly, daily, and remaining token usage with visual progress bar</li>
+            <li><b>Multi-Project Awareness</b> — Automatic project language detection for contextual queries</li>
+            <li><b>Conversation Export</b> — Export conversations as Markdown or JSON with timestamps</li>
+            <li><b>Secure Authentication</b> — API key stored securely via IntelliJ PasswordSafe with automatic token exchange</li>
         </ul>
+
+        <h3>Getting Started</h3>
+        <ol>
+            <li>Install the plugin from the JetBrains Marketplace</li>
+            <li>Go to <b>Settings &gt; Tools &gt; Pymatic AskSage</b></li>
+            <li>Enter your AskSage API email and API key</li>
+            <li>Open the <b>AskSage</b> tool window (right sidebar) and start chatting</li>
+        </ol>
+
+        <p>Requires an <a href="https://asksage.ai">AskSage.ai</a> account and API key.</p>
     ]]></description>
 
     <depends>com.intellij.modules.platform</depends>
