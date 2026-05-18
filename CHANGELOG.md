@@ -6,6 +6,41 @@
 
 ### Added
 
+- **Milestone 10: Marketplace Publishing**
+  - Plugin icon (`pluginIcon.svg`) for JetBrains Marketplace listing
+  - Marketplace publishing configuration (`publishing` block in `build.gradle.kts`)
+  - `sinceBuild` constraint set to `252` (IntelliJ 2025.2+)
+  - Enhanced plugin description with full feature list and Getting Started guide
+  - Vendor metadata (email, URL) in `plugin.xml`
+
+- **Milestone 9: End-to-End Testing**
+  - 87 new test methods across 7 test files (total: 136 tests)
+  - PromptTemplateServiceTest (19 tests) — built-in template inventory, custom template CRUD
+  - ProjectContextServiceTest (4 tests) — project name, context prefix format
+  - AskSageSettingsStateTest (10 tests) — default values, persistence, singleton
+  - OpenAiAnthropicModelsTest (18 tests) — Gson serialization for all DTOs
+  - AskSageApiClientEndpointTest (6 tests) — mock endpoint tests, auth errors, retry logic
+  - AskSageEndpointsTest (15 tests) — all endpoint constants
+  - ConversationExportTest (19 tests) — Markdown and JSON export validation
+
+- **Milestone 8: New Features**
+  - Custom prompt templates: Code Review, Security Audit, Performance Analysis, Unit Test Generator, Architecture Review, Documentation Writer, Explain Like I'm Junior
+  - Multi-project awareness with automatic language detection (`ProjectContextService`)
+  - OpenAI/Anthropic-compatible endpoint support (DTOs and client methods)
+  - Enhanced conversation export (Markdown and JSON with timestamps and project metadata)
+
+- **Milestone 7: UI Polish**
+  - 14 custom SVG icons (7 light/dark pairs) for tool window, chat, plugin, agent, usage, copy, export
+  - Full JBColor theme audit — all hardcoded colors replaced with theme-aware constants
+  - Copy response button (clipboard integration)
+  - Export conversation button (Markdown file save)
+  - Loading indicator during query execution
+
+- **Milestone 6: Additional Hardening**
+  - NotificationHelper wired into all 7 error paths (ChatPanel, PluginBrowser, AgentPanel, TokenUsage, KnowledgeBase, AuthManager, registries)
+  - Mock-based retry logic unit tests
+  - 401 token re-authentication resilience
+
 - **Milestone 5: Polish & Release**
   - Retry logic with exponential backoff for API requests (3 retries, handles 5xx and 429 errors)
   - Thread safety improvements across all registry services and chat session (synchronized access, @Volatile fields)

@@ -17,6 +17,12 @@ dependencies {
 }
 
 intellijPlatform {
+    pluginConfiguration {
+        ideaVersion {
+            sinceBuild.set("252")
+        }
+    }
+
     signing {
         certificateChainFile.set(
             providers.environmentVariable("CERTIFICATE_CHAIN").map { layout.projectDirectory.file(it) },
@@ -25,5 +31,10 @@ intellijPlatform {
             providers.environmentVariable("PRIVATE_KEY").map { layout.projectDirectory.file(it) },
         )
         password.set(providers.environmentVariable("PRIVATE_KEY_PASSWORD"))
+    }
+
+    publishing {
+        token.set(providers.environmentVariable("PUBLISH_TOKEN"))
+        channels.set(listOf(version.toString().let { if (it.contains("-")) "beta" else "default" }))
     }
 }
