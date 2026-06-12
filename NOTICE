@@ -1,0 +1,24 @@
+Pymatic AskSage Plugin for JetBrains IDEs
+Copyright 2026 BigBear.ai LLC
+
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
+
+    http://www.apache.org/licenses/LICENSE-2.0
+
+Originally developed and maintained by jlay2026 as a community-provided
+integration for the Ask Sage platform.
+
+Trademarks
+----------
+"Ask Sage" and the Ask Sage wordmark are trademarks of Ask Sage, Inc.
+Use of the Ask Sage wordmark in this project is authorized by Ask Sage.
+This project is not produced by Ask Sage, Inc.; it is a community-provided
+integration published by BigBear.ai LLC. Nothing in the Apache License,
+Version 2.0 grants permission to use the trade names, trademarks, service
+marks, or product names of BigBear.ai LLC or Ask Sage, Inc., except as
+required for reasonable and customary use in describing the origin of the
+Work and reproducing the content of this NOTICE file.
+
+"JetBrains", "IntelliJ", and "PyCharm" are trademarks of JetBrains s.r.o.
