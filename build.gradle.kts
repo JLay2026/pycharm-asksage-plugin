@@ -22,24 +22,29 @@ changelog {
     repositoryUrl = providers.gradleProperty("pluginRepositoryUrl")
 }
 
+// Render change notes for the current version from CHANGELOG.md eagerly at
+// configuration time. Doing this inside a Provider lambda captures the
+// changelog extension (and transitively the Project), which cannot be
+// serialized to the Gradle configuration cache (fails on Gradle 9.5+).
+// The resulting plain String is configuration-cache safe; Gradle tracks
+// CHANGELOG.md as a configuration input so the cache invalidates on change.
+val renderedChangeNotes = with(changelog) {
+    renderItem(
+        (getOrNull(providers.gradleProperty("version").get()) ?: getUnreleased())
+            .withHeader(false)
+            .withEmptySections(false),
+        Changelog.OutputType.HTML,
+    )
+}
+
 intellijPlatform {
     pluginConfiguration {
         ideaVersion {
             sinceBuild.set("252")
         }
 
-        // Extract change notes for the current version from CHANGELOG.md and
-        // patch them into plugin.xml (Marketplace requires change notes).
-        changeNotes = providers.gradleProperty("version").map { pluginVersion ->
-            with(changelog) {
-                renderItem(
-                    (getOrNull(pluginVersion) ?: getUnreleased())
-                        .withHeader(false)
-                        .withEmptySections(false),
-                    Changelog.OutputType.HTML,
-                )
-            }
-        }
+        // Marketplace requires change notes; patched into plugin.xml by patchPluginXml.
+        changeNotes.set(renderedChangeNotes)
     }
 
     signing {
