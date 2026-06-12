@@ -1,16 +1,16 @@
 package ai.bigbear.pymatic.asksage
 
-import com.intellij.testFramework.TestDataPath
+import com.intellij.openapi.extensions.PluginId
+import com.intellij.ide.plugins.PluginManagerCore
 import com.intellij.testFramework.fixtures.BasePlatformTestCase
-import ai.bigbear.pymatic.asksage.AskSageBundle
 
-@TestDataPath("${'$'}PROJECT_ROOT/src/test/testData")
 class MyPluginTest : BasePlatformTestCase() {
 
-    fun testAskSageBundleAccess() {
-        val message = AskSageBundle.message("msg.sample")
-        assertEquals("Sample message", message)
+    fun testPluginDescriptorIsValid() {
+        val descriptor = PluginManagerCore.getPlugin(
+            PluginId.getId("ai.bigbear.pymatic.asksage")
+        )
+        assertNotNull("Plugin descriptor should be loadable", descriptor)
+        assertEquals("Pymatic AskSage", descriptor!!.name)
     }
-
-    override fun getTestDataPath() = "src/test/testData"
 }

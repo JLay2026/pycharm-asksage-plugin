@@ -1,50 +1,174 @@
 package ai.bigbear.pymatic.asksage.api
 
-import io.mockk.mockk
-import org.junit.jupiter.api.BeforeEach
-import org.junit.jupiter.api.Test
-import ai.bigbear.pymatic.asksage.api.AskSageApiClient
-import ai.bigbear.pymatic.asksage.api.AskSageApiException
-import kotlin.test.assertEquals
-import kotlin.test.assertNotNull
+import com.intellij.testFramework.fixtures.BasePlatformTestCase
+import ai.bigbear.pymatic.asksage.api.models.ModelsResponse
+import java.io.IOException
+import java.net.http.HttpHeaders
+import java.net.http.HttpRequest
+import java.net.http.HttpClient.Version
+import java.net.http.HttpResponse
+import java.net.URI
+import java.util.Optional
+import javax.net.ssl.SSLSession
 
-class AskSageApiClientRetryTest {
+class AskSageApiClientRetryTest : BasePlatformTestCase() {
 
-    private lateinit var apiClient: AskSageApiClient
-
-    @BeforeEach
-    fun setUp() {
-        apiClient = AskSageApiClient("http://localhost:8080")
+    private fun createMockResponse(statusCode: Int, body: String): HttpResponse<String> {
+        return object : HttpResponse<String> {
+            override fun statusCode(): Int = statusCode
+            override fun body(): String = body
+            override fun headers(): HttpHeaders = HttpHeaders.of(emptyMap()) { _, _ -> true }
+            override fun request(): HttpRequest = HttpRequest.newBuilder().uri(URI.create("http://test")).build()
+            override fun previousResponse(): Optional<HttpResponse<String>> = Optional.empty()
+            override fun sslSession(): Optional<SSLSession> = Optional.empty()
+            override fun uri(): URI = URI.create("http://test")
+            override fun version(): Version = Version.HTTP_1_1
+        }
     }
 
-    @Test
-    fun testRetryMechanismExists() {
-        assertNotNull(apiClient)
+    fun testSuccessOnFirstAttempt() {
+        val json = """{"response":{"data":[]}}"""
+        val client = AskSageApiClient("http://localhost")
+        var callCount = 0
+        client.requestExecutor = HttpRequestExecutor {
+            callCount++
+            createMockResponse(200, json)
+        }
+        val result: ModelsResponse = client.getModels("test-token")
+        assertEquals(1, callCount)
+        assertNotNull(result)
     }
 
-    @Test
-    fun testMaxRetries() {
-        val maxRetries = 3
-        assertEquals(3, maxRetries)
+    fun testRetryOn500ThenSuccess() {
+        val json = """{"response":{"data":[]}}"""
+        val client = AskSageApiClient("http://localhost")
+        var callCount = 0
+        client.requestExecutor = HttpRequestExecutor {
+            callCount++
+            if (callCount == 1) {
+                createMockResponse(500, "Internal Server Error")
+            } else {
+                createMockResponse(200, json)
+            }
+        }
+        val result: ModelsResponse = client.getModels("test-token")
+        assertEquals(2, callCount)
+        assertNotNull(result)
     }
 
-    @Test
-    fun testRetryBackoff() {
-        val backoffMs = 1000L
-        assertEquals(1000L, backoffMs)
+    fun testRetryOn429ThenSuccess() {
+        val json = """{"response":{"data":[]}}"""
+        val client = AskSageApiClient("http://localhost")
+        var callCount = 0
+        client.requestExecutor = HttpRequestExecutor {
+            callCount++
+            if (callCount == 1) {
+                createMockResponse(429, "Too Many Requests")
+            } else {
+                createMockResponse(200, json)
+            }
+        }
+        val result: ModelsResponse = client.getModels("test-token")
+        assertEquals(2, callCount)
+        assertNotNull(result)
     }
 
-    @Test
-    fun testTemporaryErrorDetection() {
-        val statusCode = 503
-        val isTemporary = statusCode in 500..599
-        assertEquals(true, isTemporary)
+    fun testMaxRetriesExhausted() {
+        val client = AskSageApiClient("http://localhost")
+        var callCount = 0
+        client.requestExecutor = HttpRequestExecutor {
+            callCount++
+            createMockResponse(500, "Internal Server Error")
+        }
+        try {
+            client.getModels("test-token")
+            fail("Expected AskSageApiException")
+        } catch (e: AskSageApiException) {
+            assertEquals(3, callCount)
+            assertTrue(e.message!!.contains("failed after 3 attempts"))
+        }
     }
 
-    @Test
-    fun testPermanentErrorDetection() {
-        val statusCode = 401
-        val isPermanent = statusCode in 400..499
-        assertEquals(true, isPermanent)
+    fun testRetryOnIOException() {
+        val json = """{"response":{"data":[]}}"""
+        val client = AskSageApiClient("http://localhost")
+        var callCount = 0
+        client.requestExecutor = HttpRequestExecutor {
+            callCount++
+            if (callCount == 1) {
+                throw IOException("Connection reset")
+            } else {
+                createMockResponse(200, json)
+            }
+        }
+        val result: ModelsResponse = client.getModels("test-token")
+        assertEquals(2, callCount)
+        assertNotNull(result)
+    }
+
+    fun testNoRetryOnJsonSyntaxException() {
+        val client = AskSageApiClient("http://localhost")
+        var callCount = 0
+        client.requestExecutor = HttpRequestExecutor {
+            callCount++
+            createMockResponse(200, "not valid json {{{")
+        }
+        try {
+            client.getModels("test-token")
+            fail("Expected AskSageApiException")
+        } catch (e: AskSageApiException) {
+            assertEquals(1, callCount)
+            assertTrue(e.message!!.contains("Invalid response format"))
+        }
+    }
+
+    fun testNoRetryOnInterruptedException() {
+        val client = AskSageApiClient("http://localhost")
+        var callCount = 0
+        client.requestExecutor = HttpRequestExecutor {
+            callCount++
+            throw InterruptedException("Thread interrupted")
+        }
+        try {
+            client.getModels("test-token")
+            fail("Expected AskSageApiException")
+        } catch (e: AskSageApiException) {
+            assertEquals(1, callCount)
+            assertTrue(e.message!!.contains("Request interrupted"))
+        } finally {
+            Thread.interrupted()
+        }
+    }
+
+    fun testRetryOnIOExceptionMaxRetries() {
+        val client = AskSageApiClient("http://localhost")
+        var callCount = 0
+        client.requestExecutor = HttpRequestExecutor {
+            callCount++
+            throw IOException("Connection refused")
+        }
+        try {
+            client.getModels("test-token")
+            fail("Expected AskSageApiException")
+        } catch (e: AskSageApiException) {
+            assertEquals(3, callCount)
+            assertTrue(e.message!!.contains("failed after 3 attempts"))
+        }
+    }
+
+    fun test401ThrowsAuthExceptionImmediately() {
+        val client = AskSageApiClient("http://localhost")
+        var callCount = 0
+        client.requestExecutor = HttpRequestExecutor {
+            callCount++
+            createMockResponse(401, """{"error":"Unauthorized"}""")
+        }
+        try {
+            client.getModels("test-token")
+            fail("Expected AskSageAuthException")
+        } catch (e: AskSageAuthException) {
+            assertEquals(1, callCount)
+            assertTrue(e.message!!.contains("Authentication expired"))
+        }
     }
 }
