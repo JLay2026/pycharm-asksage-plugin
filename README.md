@@ -8,13 +8,17 @@ An IntelliJ Platform plugin that integrates the [AskSage.ai](https://asksage.ai)
 - **Model Selection** — Choose from all available AI models, dynamically fetched from AskSage
 - **Chat Interface** — Streaming responses with markdown rendering, multi-turn conversation history, persona and dataset selectors, and clickable follow-up questions
 - **Editor Context Actions** — Right-click menu: Explain Code, Refactor, Generate Docs, Ask About File, Send Selection to AskSage
-- **Keyboard Shortcuts** — `Ctrl+Alt+E` (Explain), `Ctrl+Alt+R` (Refactor), `Ctrl+Alt+D` (Docs), `Ctrl+Alt+A` (Ask), `Ctrl+Alt+S` (Send Selection), `Ctrl+Alt+K` (Add to Knowledge Base)
+- **Keyboard Shortcuts** — `Ctrl+Shift+Alt+E` (Explain), `Ctrl+Shift+Alt+R` (Refactor), `Ctrl+Shift+Alt+D` (Docs), `Ctrl+Shift+Alt+A` (Ask), `Ctrl+Shift+Alt+K` (Add to Knowledge Base). Send Selection has no default shortcut — assign one in **Settings > Keymap** if desired
 - **Plugin Browser** — Browse and execute AskSage plugins with results rendered inline
 - **Agent Execution** — Run AskSage agents for complex multi-step tasks
 - **Knowledge Base Training** — Add code from the editor directly to your AskSage datasets
 - **Token Usage Dashboard** — Monitor monthly, daily, and remaining token usage with a color-coded progress bar
 - **Status Bar Widget** — Current live mode and model displayed at the bottom of the IDE
 - **Secure Authentication** — API key stored securely via IntelliJ PasswordSafe with automatic 24-hour token exchange
+
+## Data & Privacy
+
+The plugin sends your prompts and any code you explicitly share (selections, files sent via context actions, knowledge-base uploads) to the [Ask Sage](https://asksage.ai) service. No code is transmitted without an explicit user action. Use is governed by the Ask Sage Terms of Service and Privacy Policy; a paid Ask Sage account and API key are required.
 
 ## Requirements
 
@@ -50,7 +54,7 @@ To run tests:
 ## Architecture
 
 ```
-src/main/kotlin/org/jetbrains/plugins/template/
+src/main/kotlin/ai/bigbear/pymatic/asksage/
   api/                  # AskSage API client, endpoints, auth, DTOs
   actions/              # Editor context actions (Explain, Refactor, Docs, etc.)
   services/             # Registry services, chat session, settings state

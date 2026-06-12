@@ -2,7 +2,7 @@
 <idea-plugin>
     <id>ai.bigbear.pymatic.asksage</id>
     <name>Pymatic AskSage</name>
-    <vendor email="jason.layman@bigbear.ai" url="https://github.com/DigiSpark-Advisory/pymatic-asksage-plugin">BigBear.ai</vendor>
+    <vendor email="jason.layman@bigbear.ai" url="https://github.com/JLay2026/pycharm-asksage-plugin">BigBear.ai LLC</vendor>
     <description><![CDATA[
         <p><b>Pymatic AskSage</b> integrates the <a href="https://asksage.ai">AskSage.ai</a> API directly into your
         JetBrains IDE, providing conversational AI assistance with user-selectable internet access modes and
@@ -32,16 +32,25 @@
             <li>Open the <b>AskSage</b> tool window (right sidebar) and start chatting</li>
         </ol>
 
-        <p>Requires an <a href="https://asksage.ai">AskSage.ai</a> account and API key.</p>
+        <h3>Data &amp; Privacy</h3>
+        <p>This plugin sends the prompts you type and any code you explicitly choose to share (editor selections,
+        files sent via context actions, and knowledge-base uploads) to the <a href="https://asksage.ai">Ask Sage</a>
+        service for processing by the AI model you select. No code is transmitted without an explicit user action.
+        Use of the service is governed by the <a href="https://www.asksage.ai/terms">Ask Sage Terms of Service</a>
+        and <a href="https://www.asksage.ai/privacy">Privacy Policy</a>. A paid Ask Sage account and API key are
+        required.</p>
+
+        <p>This plugin is a community-provided integration published by BigBear.ai LLC and is not produced by
+        Ask Sage, Inc. The Ask Sage wordmark is used with authorization.</p>
     ]]></description>
 
     <depends>com.intellij.modules.platform</depends>
 
-    <resource-bundle>messages.MyBundle</resource-bundle>
+    <resource-bundle>messages.AskSageBundle</resource-bundle>
 
     <extensions defaultExtensionNs="com.intellij">
         <toolWindow
-            factoryClass="org.jetbrains.plugins.template.ui.toolwindow.AskSageToolWindowFactory"
+            factoryClass="ai.bigbear.pymatic.asksage.ui.toolwindow.AskSageToolWindowFactory"
             id="AskSage"
             anchor="right"
             icon="/icons/asksage.svg"
@@ -49,45 +58,45 @@
 
         <applicationConfigurable
             parentId="tools"
-            instance="org.jetbrains.plugins.template.ui.settings.AskSageSettingsConfigurable"
-            id="org.jetbrains.plugins.template.ui.settings.AskSageSettingsConfigurable"
+            instance="ai.bigbear.pymatic.asksage.ui.settings.AskSageSettingsConfigurable"
+            id="ai.bigbear.pymatic.asksage.ui.settings.AskSageSettingsConfigurable"
             displayName="Pymatic AskSage"
         />
 
         <applicationService
-            serviceImplementation="org.jetbrains.plugins.template.api.auth.AuthManager"
+            serviceImplementation="ai.bigbear.pymatic.asksage.api.auth.AuthManager"
         />
 
         <applicationService
-            serviceImplementation="org.jetbrains.plugins.template.services.AskSageSettingsState"
+            serviceImplementation="ai.bigbear.pymatic.asksage.services.AskSageSettingsState"
         />
 
         <applicationService
-            serviceImplementation="org.jetbrains.plugins.template.services.ModelRegistryService"
+            serviceImplementation="ai.bigbear.pymatic.asksage.services.ModelRegistryService"
         />
 
         <applicationService
-            serviceImplementation="org.jetbrains.plugins.template.services.PersonaRegistryService"
+            serviceImplementation="ai.bigbear.pymatic.asksage.services.PersonaRegistryService"
         />
 
         <applicationService
-            serviceImplementation="org.jetbrains.plugins.template.services.DatasetRegistryService"
+            serviceImplementation="ai.bigbear.pymatic.asksage.services.DatasetRegistryService"
         />
 
         <projectService
-            serviceImplementation="org.jetbrains.plugins.template.services.ChatSessionService"
+            serviceImplementation="ai.bigbear.pymatic.asksage.services.ChatSessionService"
         />
 
         <projectService
-            serviceImplementation="org.jetbrains.plugins.template.services.ProjectContextService"
+            serviceImplementation="ai.bigbear.pymatic.asksage.services.ProjectContextService"
         />
 
         <applicationService
-            serviceImplementation="org.jetbrains.plugins.template.services.PromptTemplateService"
+            serviceImplementation="ai.bigbear.pymatic.asksage.services.PromptTemplateService"
         />
 
         <statusBarWidgetFactory
-            implementation="org.jetbrains.plugins.template.ui.statusbar.AskSageStatusBarWidgetFactory"
+            implementation="ai.bigbear.pymatic.asksage.ui.statusbar.AskSageStatusBarWidgetFactory"
             id="AskSageStatus"
         />
 
@@ -103,55 +112,54 @@
             <add-to-group group-id="EditorPopupMenu" anchor="last"/>
 
             <action id="AskSage.ExplainCode"
-                    class="org.jetbrains.plugins.template.actions.ExplainCodeAction"
+                    class="ai.bigbear.pymatic.asksage.actions.ExplainCodeAction"
                     text="Explain Code"
                     description="Ask AskSage to explain the selected code or current file"
                     icon="/icons/chat.svg">
-                <keyboard-shortcut keymap="$default" first-keystroke="ctrl alt E"/>
+                <keyboard-shortcut keymap="$default" first-keystroke="ctrl shift alt E"/>
             </action>
 
             <action id="AskSage.RefactorCode"
-                    class="org.jetbrains.plugins.template.actions.RefactorCodeAction"
+                    class="ai.bigbear.pymatic.asksage.actions.RefactorCodeAction"
                     text="Refactor with AskSage"
                     description="Get refactoring suggestions from AskSage"
                     icon="/icons/chat.svg">
-                <keyboard-shortcut keymap="$default" first-keystroke="ctrl alt R"/>
+                <keyboard-shortcut keymap="$default" first-keystroke="ctrl shift alt R"/>
             </action>
 
             <action id="AskSage.GenerateDocs"
-                    class="org.jetbrains.plugins.template.actions.GenerateDocsAction"
+                    class="ai.bigbear.pymatic.asksage.actions.GenerateDocsAction"
                     text="Generate Documentation"
                     description="Generate documentation for the selected code or current file"
                     icon="/icons/chat.svg">
-                <keyboard-shortcut keymap="$default" first-keystroke="ctrl alt D"/>
+                <keyboard-shortcut keymap="$default" first-keystroke="ctrl shift alt D"/>
             </action>
 
             <action id="AskSage.AskAboutFile"
-                    class="org.jetbrains.plugins.template.actions.AskAboutFileAction"
+                    class="ai.bigbear.pymatic.asksage.actions.AskAboutFileAction"
                     text="Ask About This File..."
                     description="Ask AskSage a question about the current file"
                     icon="/icons/chat.svg">
-                <keyboard-shortcut keymap="$default" first-keystroke="ctrl alt A"/>
+                <keyboard-shortcut keymap="$default" first-keystroke="ctrl shift alt A"/>
             </action>
 
             <separator/>
 
             <action id="AskSage.SendSelection"
-                    class="org.jetbrains.plugins.template.actions.SendSelectionToAskSageAction"
+                    class="ai.bigbear.pymatic.asksage.actions.SendSelectionToAskSageAction"
                     text="Send Selection to AskSage"
                     description="Send selected code to AskSage chat"
                     icon="/icons/chat.svg">
-                <keyboard-shortcut keymap="$default" first-keystroke="ctrl alt S"/>
             </action>
 
             <separator/>
 
             <action id="AskSage.AddToKnowledgeBase"
-                    class="org.jetbrains.plugins.template.actions.AddToKnowledgeBaseAction"
+                    class="ai.bigbear.pymatic.asksage.actions.AddToKnowledgeBaseAction"
                     text="Add to Knowledge Base"
                     description="Add selected code or current file to an AskSage dataset"
                     icon="/icons/plugin.svg">
-                <keyboard-shortcut keymap="$default" first-keystroke="ctrl alt K"/>
+                <keyboard-shortcut keymap="$default" first-keystroke="ctrl shift alt K"/>
             </action>
         </group>
     </actions>

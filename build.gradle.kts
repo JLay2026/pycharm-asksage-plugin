@@ -1,3 +1,4 @@
+import org.jetbrains.changelog.Changelog
 import org.jetbrains.intellij.platform.gradle.TestFrameworkType
 
 plugins {
@@ -16,10 +17,28 @@ dependencies {
     }
 }
 
+changelog {
+    groups.empty()
+    repositoryUrl = providers.gradleProperty("pluginRepositoryUrl")
+}
+
 intellijPlatform {
     pluginConfiguration {
         ideaVersion {
             sinceBuild.set("252")
+        }
+
+        // Extract change notes for the current version from CHANGELOG.md and
+        // patch them into plugin.xml (Marketplace requires change notes).
+        changeNotes = providers.gradleProperty("version").map { pluginVersion ->
+            with(changelog) {
+                renderItem(
+                    (getOrNull(pluginVersion) ?: getUnreleased())
+                        .withHeader(false)
+                        .withEmptySections(false),
+                    Changelog.OutputType.HTML,
+                )
+            }
         }
     }
 
