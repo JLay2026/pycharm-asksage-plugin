@@ -72,12 +72,14 @@ src/main/kotlin/org/jetbrains/plugins/template/
 | `/server/query` | Implemented (standard + streaming) |
 | `/server/follow-up-questions` | Implemented |
 | `/server/get-plugins` | Implemented |
-| `/server/execute-plugin` | Implemented |
 | `/server/list-agents` | Implemented |
 | `/server/execute-agent` | Implemented |
+| `/server/execute-plugin` | Implemented |
 | `/server/train` | Implemented |
 | `/user/count-monthly-tokens` | Implemented |
 
 ## License
 
-See [LICENSE](LICENSE) for details.
+Licensed under the [Apache License, Version 2.0](LICENSE).
+Copyright 2026 BigBear.ai LLC. See [NOTICE](NOTICE) for attribution and
+trademark information, including authorized use of the Ask Sage wordmark.
