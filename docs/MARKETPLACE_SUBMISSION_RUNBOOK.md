@@ -2,6 +2,10 @@
 
 A step-by-step guide to publishing the Pymatic AskSage plugin on the [JetBrains Marketplace](https://plugins.jetbrains.com). Written for first-time submitters — no prior marketplace experience needed.
 
+> **Gates before first upload:**
+> 1. Local-install smoke test of the built ZIP must pass (Step 9d).
+> 2. Legal validation issue [#14](https://github.com/JLay2026/pycharm-asksage-plugin/issues/14) must be closed (license, copyright holder, wordmark authorization on file, repo public).
+
 ---
 
 ## Table of Contents
@@ -36,8 +40,8 @@ Before you begin, make sure you have the following ready:
 - [ ] **Java 21** installed (needed to build the plugin)
 - [ ] **The repository cloned** to your machine:
   ```bash
-  git clone https://github.com/DigiSpark-Advisory/pymatic-asksage-plugin.git
-  cd pymatic-asksage-plugin
+  git clone https://github.com/JLay2026/pycharm-asksage-plugin.git
+  cd pycharm-asksage-plugin
   ```
 
 ---
@@ -58,19 +62,19 @@ You need a free JetBrains account to publish plugins.
 
 ## 3. Create a Vendor Profile
 
-A "Vendor" is the person or organization listed as the plugin publisher.
+A "Vendor" is the person or organization listed as the plugin publisher. **Ours is BigBear.ai LLC** (decision D1, 2026-06-12).
 
 1. Go to [https://plugins.jetbrains.com](https://plugins.jetbrains.com) and sign in
 2. Click your **profile icon** (top-right) → **"Upload plugin"**
 3. If this is your first time, you'll be asked to:
-   - **Accept the JetBrains Marketplace Developer Agreement** — read and accept it
+   - **Accept the JetBrains Marketplace Developer Agreement** — must be approved on behalf of BigBear.ai LLC (see legal gate #14)
    - **Create a Vendor profile** — fill in:
-     - **Vendor Name:** `BigBear.ai` (must match the `<vendor>` tag in `plugin.xml`)
-     - **Vendor URL:** `https://github.com/DigiSpark-Advisory/pymatic-asksage-plugin`
+     - **Vendor Name:** `BigBear.ai LLC` (must match the `<vendor>` tag in `plugin.xml`)
+     - **Vendor URL:** `https://github.com/JLay2026/pycharm-asksage-plugin`
      - **Vendor Email:** `jason.layman@bigbear.ai`
 4. Click **"Save"**
 
-> **Important:** The Vendor Name on the marketplace must match what's in the `plugin.xml` file. Our plugin uses `BigBear.ai`.
+> **Important:** The Vendor Name on the marketplace must match what's in the `plugin.xml` file. Our plugin uses `BigBear.ai LLC`. Vendor profile details are difficult to change after publication — confirm with legal before creating.
 
 ---
 
@@ -133,7 +137,7 @@ You'll be prompted for several fields. Here's what to enter:
 | Country Name | `US` |
 | State or Province Name | Your state (e.g., `Virginia`) |
 | Locality Name | Your city (e.g., `Springfield`) |
-| Organization Name | `BigBear.ai` |
+| Organization Name | `BigBear.ai LLC` |
 | Organizational Unit Name | Press Enter to skip |
 | Common Name | `Pymatic AskSage Plugin Signing` |
 | Email Address | `jason.layman@bigbear.ai` |
@@ -174,7 +178,7 @@ The publish token lets the CI/CD pipeline upload new versions automatically.
 
 The CI/CD pipeline (`release.yml`) needs four secrets to sign and publish the plugin. You'll add them to the GitHub repository.
 
-1. Go to [https://github.com/DigiSpark-Advisory/pymatic-asksage-plugin/settings/secrets/actions](https://github.com/DigiSpark-Advisory/pymatic-asksage-plugin/settings/secrets/actions)
+1. Go to [https://github.com/JLay2026/pycharm-asksage-plugin/settings/secrets/actions](https://github.com/JLay2026/pycharm-asksage-plugin/settings/secrets/actions)
 2. Click **"New repository secret"** for each of the following:
 
 | Secret Name | What to paste | How to get the value |
@@ -290,10 +294,12 @@ Before submitting, verify all metadata is correct. These values come from `plugi
   - 1–4 words recommended (max 60 characters)
   - Do not include "Plugin", "JetBrains", or IDE names
   - Must be unique on the marketplace
-- [ ] **`<vendor>`** — Publisher info with `email` and `url` attributes
+  - Ask Sage wordmark use is authorized (see `NOTICE`); keep written authorization on file
+- [ ] **`<vendor>`** — `BigBear.ai LLC` with `email` and `url` attributes
 - [ ] **`<description>`** — HTML description wrapped in `<![CDATA[...]]>`
   - Must be at least 100 characters
   - Should describe what the plugin does, key features, and how to get started
+  - Must keep the **Data & Privacy** disclosure (code is sent to the Ask Sage API; links to Ask Sage ToS/Privacy)
   - HTML tags allowed: `<p>`, `<b>`, `<ul>`, `<li>`, `<a>`, `<h3>`, `<ol>`, `<code>`
 - [ ] **`<depends>`** — At minimum: `com.intellij.modules.platform`
 
@@ -301,11 +307,18 @@ Before submitting, verify all metadata is correct. These values come from `plugi
 
 - [ ] **`version`** — `1.0.0` (current). Uses semantic versioning: `MAJOR.MINOR.PATCH`
 - [ ] **`group`** — `ai.bigbear.pymatic.asksage`
+- [ ] **`pluginRepositoryUrl`** — `https://github.com/JLay2026/pycharm-asksage-plugin`
 
 ### In `build.gradle.kts`
 
 - [ ] **`sinceBuild`** — `252` (IntelliJ 2025.2+). This means the plugin requires IntelliJ 2025.2 or newer.
 - [ ] **No `untilBuild`** — The plugin is forward-compatible with all future IDE versions.
+- [ ] **`changeNotes`** — rendered automatically from `CHANGELOG.md` (current version section, falls back to Unreleased)
+
+### Licensing files
+
+- [ ] **`LICENSE`** — Apache License 2.0, copyright 2026 BigBear.ai LLC
+- [ ] **`NOTICE`** — attribution + Ask Sage wordmark authorization statement (preserved by downstream redistributors under Apache §4(d))
 
 ### In `CHANGELOG.md`
 
@@ -321,7 +334,7 @@ Before uploading, build the plugin ZIP file locally to make sure everything comp
 ### Step 9a: Build the plugin
 
 ```bash
-cd pymatic-asksage-plugin
+cd pycharm-asksage-plugin
 
 # Build the plugin distribution ZIP
 ./gradlew buildPlugin
@@ -357,11 +370,32 @@ export PRIVATE_KEY_PASSWORD=YOUR_PASSWORD
 
 The signed plugin will be at `build/distributions/` with a `-signed` suffix.
 
+### Step 9d: Local-install smoke test (REQUIRED GATE before account/key setup)
+
+Install the actual packaged ZIP into a clean IDE — this exercises the real distribution in a way `runIde` and CI do not.
+
+1. Open **PyCharm** (primary target; repeat in IntelliJ IDEA if available)
+2. **Settings → Plugins → ⚙ → Install Plugin from Disk…** → select `build/distributions/Pymatic AskSage-1.0.0.zip` → restart
+   - An "unsigned plugin" warning is expected for local installs — signing happens at Marketplace upload
+3. Smoke checklist:
+   - [ ] Plugin appears in the Plugins list with correct name, icon, and description
+   - [ ] **Settings → Tools → Pymatic AskSage** opens; credentials save and persist
+   - [ ] AskSage tool window opens; model list loads; one chat round-trip succeeds
+   - [ ] Each editor context action fires: Explain / Refactor / Docs / Ask / Send Selection / Add to KB
+   - [ ] Remapped shortcuts work (`Ctrl+Shift+Alt+E/R/D/A/K`) and `Ctrl+Alt+S` still opens Settings
+   - [ ] Status bar widget renders; token dashboard loads
+   - [ ] No plugin errors in **Help → Show Log** / IDE event log
+4. Uninstall cleanly (no errors on removal/restart)
+
+Only proceed to vendor profile / signing keys (Steps 2–6) once this passes.
+
 ---
 
 ## 10. First-Time Manual Upload
 
 > **Important:** The very first version of a plugin **must** be uploaded manually through the web UI. After that, you can use automated publishing.
+>
+> **Pre-flight:** Step 9d smoke test passed · legal issue [#14](https://github.com/JLay2026/pycharm-asksage-plugin/issues/14) closed · repository is **public** (required for the open-source license's source link).
 
 ### Step 10a: Upload the plugin
 
@@ -369,7 +403,7 @@ The signed plugin will be at `build/distributions/` with a `-signed` suffix.
 2. Click your **profile icon** → **"Upload plugin"**
 3. Fill in the form:
    - **Plugin file:** Click "Choose File" and select the ZIP from `build/distributions/Pymatic AskSage-1.0.0.zip`
-   - **License:** Choose an appropriate license (e.g., Apache 2.0, MIT, or your custom EULA)
+   - **License:** Select **Apache License 2.0** (the repository license) and provide the source code link `https://github.com/JLay2026/pycharm-asksage-plugin` — open-source submissions require a public source link
    - **Tags:** Select relevant tags:
      - `AI Assistant`
      - `Code Review`
@@ -396,6 +430,7 @@ The signed plugin will be at `build/distributions/` with a `-signed` suffix.
 | Description too short | Write at least 100 characters describing what the plugin does |
 | Plugin name includes "Plugin" or IDE name | Remove those words from `<name>` in plugin.xml |
 | No license specified | Add a license during upload |
+| Third-party brand without authorization | Ask Sage wordmark use is authorized — keep the written authorization on file in case moderators ask |
 | Plugin contains ads without declaration | Set `containsAds=true` if applicable (ours doesn't have ads) |
 
 ---
@@ -407,7 +442,7 @@ Once the first version is uploaded manually and approved, all future versions ca
 ### How it works
 
 1. You push code to `main` → the **Build** workflow runs
-2. If Build/Test/Verify pass, a **Release Draft** is created on the [GitHub Releases page](https://github.com/DigiSpark-Advisory/pymatic-asksage-plugin/releases)
+2. If Build/Test/Verify pass, a **Release Draft** is created on the [GitHub Releases page](https://github.com/JLay2026/pycharm-asksage-plugin/releases)
 3. You review the draft release and click **"Publish release"**
 4. Publishing the release triggers the **Release** workflow, which:
    - Signs the plugin with your keys
@@ -419,7 +454,7 @@ Once the first version is uploaded manually and approved, all future versions ca
 1. Update the `version` in `gradle.properties` (e.g., `1.0.0` → `1.1.0`)
 2. Add release notes to `CHANGELOG.md` under a new version header
 3. Commit, push to `main`, and wait for CI to pass
-4. Go to [GitHub Releases](https://github.com/DigiSpark-Advisory/pymatic-asksage-plugin/releases)
+4. Go to [GitHub Releases](https://github.com/JLay2026/pycharm-asksage-plugin/releases)
 5. Find the new draft release and click **"Edit"**
 6. Review the release notes
 7. Click **"Publish release"**
@@ -530,9 +565,11 @@ If you need to change the icon after publishing:
 |------|---------|
 | `src/main/resources/META-INF/plugin.xml` | Plugin metadata (ID, name, description, vendor) |
 | `src/main/resources/META-INF/pluginIcon.svg` | Plugin icon (40×40 SVG) |
-| `gradle.properties` | Version number and group ID |
-| `build.gradle.kts` | Build config, signing, publishing |
-| `CHANGELOG.md` | Release notes |
+| `gradle.properties` | Version number, group ID, repository URL |
+| `build.gradle.kts` | Build config, change notes, signing, publishing |
+| `LICENSE` | Apache License 2.0 (copyright BigBear.ai LLC) |
+| `NOTICE` | Attribution + Ask Sage wordmark authorization |
+| `CHANGELOG.md` | Release notes (source of plugin change notes) |
 | `.github/workflows/build.yml` | CI/CD: build, test, verify, create release draft |
 | `.github/workflows/release.yml` | CI/CD: sign and publish to marketplace on release |
 
@@ -546,6 +583,7 @@ If you need to change the icon after publishing:
 | Plugin Signing Docs | [https://plugins.jetbrains.com/docs/intellij/plugin-signing.html](https://plugins.jetbrains.com/docs/intellij/plugin-signing.html) |
 | Marketplace Approval Guidelines | [https://plugins.jetbrains.com/docs/marketplace/jetbrains-marketplace-approval-guidelines.html](https://plugins.jetbrains.com/docs/marketplace/jetbrains-marketplace-approval-guidelines.html) |
 | Plugin Icon Docs | [https://plugins.jetbrains.com/docs/intellij/plugin-icon-file.html](https://plugins.jetbrains.com/docs/intellij/plugin-icon-file.html) |
-| GitHub Repo | [https://github.com/DigiSpark-Advisory/pymatic-asksage-plugin](https://github.com/DigiSpark-Advisory/pymatic-asksage-plugin) |
-| GitHub Repo Secrets | [https://github.com/DigiSpark-Advisory/pymatic-asksage-plugin/settings/secrets/actions](https://github.com/DigiSpark-Advisory/pymatic-asksage-plugin/settings/secrets/actions) |
-| GitHub Releases | [https://github.com/DigiSpark-Advisory/pymatic-asksage-plugin/releases](https://github.com/DigiSpark-Advisory/pymatic-asksage-plugin/releases) |
+| GitHub Repo | [https://github.com/JLay2026/pycharm-asksage-plugin](https://github.com/JLay2026/pycharm-asksage-plugin) |
+| GitHub Repo Secrets | [https://github.com/JLay2026/pycharm-asksage-plugin/settings/secrets/actions](https://github.com/JLay2026/pycharm-asksage-plugin/settings/secrets/actions) |
+| GitHub Releases | [https://github.com/JLay2026/pycharm-asksage-plugin/releases](https://github.com/JLay2026/pycharm-asksage-plugin/releases) |
+| Legal gate issue | [https://github.com/JLay2026/pycharm-asksage-plugin/issues/14](https://github.com/JLay2026/pycharm-asksage-plugin/issues/14) |
