@@ -1,5 +1,6 @@
 package ai.bigbear.pymatic.asksage.ui.toolwindow
 
+import com.google.gson.Gson
 import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.diagnostic.logger
 import com.intellij.openapi.project.Project
@@ -39,6 +40,7 @@ class PluginBrowserPanel(private val project: Project) : JPanel(BorderLayout()) 
     private val authManager = AuthManager.getInstance()
     private val modelRegistry = ModelRegistryService.getInstance()
     private val apiClient = AskSageApiClient(settings.baseUrl)
+    private val gson = Gson()
 
     private val pluginComboModel = DefaultComboBoxModel<PluginInfo>()
     private val pluginSelector = ComboBox(pluginComboModel).apply {
@@ -53,7 +55,7 @@ class PluginBrowserPanel(private val project: Project) : JPanel(BorderLayout()) 
             ): Component {
                 super.getListCellRendererComponent(list, value, index, isSelected, cellHasFocus)
                 if (value is PluginInfo) {
-                    text = value.name
+                    text = value.displayName
                     toolTipText = value.description ?: ""
                 }
                 return this
@@ -159,7 +161,7 @@ class PluginBrowserPanel(private val project: Project) : JPanel(BorderLayout()) 
         }
 
         executeButton.isEnabled = false
-        statusLabel.text = "Executing ${plugin.name}..."
+        statusLabel.text = "Executing ${plugin.displayName}..."
 
         ApplicationManager.getApplication().executeOnPooledThread {
             try {
@@ -168,14 +170,13 @@ class PluginBrowserPanel(private val project: Project) : JPanel(BorderLayout()) 
                     ?: throw AskSageApiException("Authentication failed")
 
                 val request = ExecutePluginRequest(
-                    plugin = plugin.name,
-                    message = message,
+                    pluginName = plugin.identifier,
+                    pluginValues = gson.toJson(mapOf("message" to message)),
                     model = selectedModel,
                     live = LiveMode.fromValue(settings.defaultLiveMode).value,
                 )
 
-                val response = apiClient.executePlugin(token, request)
-                val result = response.response ?: response.message ?: "No response"
+                val result = apiClient.executePlugin(token, request).ifBlank { "No response" }
 
                 SwingUtilities.invokeLater {
                     resultDisplay.text = ""

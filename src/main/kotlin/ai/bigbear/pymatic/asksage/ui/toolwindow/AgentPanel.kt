@@ -12,10 +12,8 @@ import ai.bigbear.pymatic.asksage.api.AskSageApiException
 import ai.bigbear.pymatic.asksage.api.auth.AuthManager
 import ai.bigbear.pymatic.asksage.api.models.AgentInfo
 import ai.bigbear.pymatic.asksage.api.models.ExecuteAgentRequest
-import ai.bigbear.pymatic.asksage.api.models.ModelInfo
 import ai.bigbear.pymatic.asksage.services.AskSageSettingsState
 import ai.bigbear.pymatic.asksage.services.ModelRegistryService
-import ai.bigbear.pymatic.asksage.util.LiveMode
 import ai.bigbear.pymatic.asksage.util.MarkdownRenderer
 import ai.bigbear.pymatic.asksage.util.NotificationHelper
 import java.awt.BorderLayout
@@ -152,9 +150,9 @@ class AgentPanel(private val project: Project) : JPanel(BorderLayout()) {
         val message = inputArea.text.trim()
         if (message.isEmpty()) return
 
-        val selectedModel = (modelSelector.selectedItem as? ModelInfo)?.id
-        if (selectedModel.isNullOrBlank()) {
-            statusLabel.text = "Please select a model"
+        val agentId = agent.id
+        if (agentId == null) {
+            statusLabel.text = "Selected agent has no id"
             return
         }
 
@@ -168,14 +166,12 @@ class AgentPanel(private val project: Project) : JPanel(BorderLayout()) {
                     ?: throw AskSageApiException("Authentication failed")
 
                 val request = ExecuteAgentRequest(
-                    agent = agent.name,
+                    agentId = agentId,
                     message = message,
-                    model = selectedModel,
-                    live = LiveMode.fromValue(settings.defaultLiveMode).value,
                 )
 
                 val response = apiClient.executeAgent(token, request)
-                val result = response.response ?: response.message ?: "No response"
+                val result = response.text() ?: "No response"
 
                 SwingUtilities.invokeLater {
                     resultDisplay.text = ""

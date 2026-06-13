@@ -73,14 +73,16 @@ class AddToKnowledgeBaseAction : AnAction() {
                 val token = authManager.getAccessToken(apiClient)
                     ?: throw AskSageApiException("Authentication failed")
 
+                // The Ask Sage /server/train endpoint takes `content` and an optional
+                // `force_dataset`; the optional title is folded into `context`.
                 val request = TrainRequest(
-                    dataset = selectedDataset,
                     content = contentToTrain,
-                    title = title.ifBlank { context.fileName },
+                    context = title.ifBlank { context.fileName },
+                    forceDataset = selectedDataset,
                 )
 
                 val response = apiClient.train(token, request)
-                val result = response.response ?: response.message ?: "Content added"
+                val result = response.response ?: "Content added"
 
                 ApplicationManager.getApplication().invokeLater {
                     Messages.showInfoMessage(
