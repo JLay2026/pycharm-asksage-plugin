@@ -54,12 +54,13 @@ class AuthManager {
 
         return try {
             val response = apiClient.getToken(email, apiKey)
-            if (response.accessToken != null) {
-                cachedToken = response.accessToken
+            val token = response.resolveToken()
+            if (token != null) {
+                cachedToken = token
                 tokenTimestamp = System.currentTimeMillis()
                 cachedToken
             } else {
-                LOG.warn("Token exchange failed: ${response.response}")
+                LOG.warn("Token exchange returned no token: status=${response.status} message=${response.message}")
                 NotificationHelper.warn(null, "AskSage Auth", "Token exchange failed, using API key directly")
                 apiKey
             }

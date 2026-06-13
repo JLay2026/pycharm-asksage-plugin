@@ -1,5 +1,6 @@
 package ai.bigbear.pymatic.asksage.api.models
 
+import com.google.gson.JsonElement
 import com.google.gson.annotations.SerializedName
 
 // --- Authentication ---
@@ -12,8 +13,34 @@ data class TokenRequest(
 data class TokenResponse(
     @SerializedName("access_token") val accessToken: String?,
     val status: Int?,
-    val response: String?,
-)
+    // The Ask Sage token endpoint is undocumented in the OpenAPI spec and varies
+    // by instance: `response` may be a bare token string OR an object containing
+    // the token. Keep it as a raw JsonElement so parsing never fails on shape,
+    // and resolve the token defensively via resolveToken().
+    val response: JsonElement? = null,
+    val message: String? = null,
+) {
+    /** Resolve the access token across known Ask Sage response shapes. */
+    fun resolveToken(): String? {
+        if (!accessToken.isNullOrBlank()) return accessToken
+        val r = response ?: return null
+        if (r.isJsonPrimitive && r.asJsonPrimitive.isString) {
+            return r.asString.takeIf { it.isNotBlank() }
+        }
+        if (r.isJsonObject) {
+            val obj = r.asJsonObject
+            for (key in listOf("access_token", "token", "api_token", "accessToken")) {
+                if (obj.has(key)) {
+                    val el = obj.get(key)
+                    if (el != null && el.isJsonPrimitive && el.asJsonPrimitive.isString) {
+                        return el.asString.takeIf { it.isNotBlank() }
+                    }
+                }
+            }
+        }
+        return null
+    }
+}
 
 // --- Models ---
 
@@ -24,13 +51,24 @@ data class ModelInfo(
     @SerializedName("owned_by") val ownedBy: String?,
 )
 
+// The /server/get-models response shape (per the Ask Sage OpenAPI spec):
+//   { "response": ["model-name", ...],      // array of model-name strings
+//     "object": "list",
+//     "data": [ { id, object, created, name, owned_by }, ... ],  // rich objects
+//     "status": 200 }
 data class ModelsResponse(
-    val response: ModelsData?,
-)
-
-data class ModelsData(
-    val data: List<ModelInfo>?,
-)
+    val response: List<String>? = null,
+    val data: List<ModelInfo>? = null,
+    val status: Int? = null,
+) {
+    /** Rich model objects when present; otherwise synthesize from the name list. */
+    fun resolveModels(): List<ModelInfo> {
+        data?.let { if (it.isNotEmpty()) return it }
+        return response?.map { name ->
+            ModelInfo(created = null, id = name, name = name, ownedBy = null)
+        } ?: emptyList()
+    }
+}
 
 // --- Personas ---
 

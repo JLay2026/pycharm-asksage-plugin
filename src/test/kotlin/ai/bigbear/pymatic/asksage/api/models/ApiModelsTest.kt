@@ -29,11 +29,46 @@ class ApiModelsTest : TestCase() {
         assertEquals(request.message, streaming.message)
     }
 
-    fun testTokenResponseSerialization() {
+    fun testTokenResponseTopLevelAccessToken() {
         val json = """{"access_token": "abc123", "status": 200}"""
         val response = gson.fromJson(json, TokenResponse::class.java)
         assertEquals("abc123", response.accessToken)
         assertEquals(200, response.status)
+        assertEquals("abc123", response.resolveToken())
+    }
+
+    fun testTokenResponseObjectResponse() {
+        // Real shape on some instances: token nested inside an object `response`.
+        val json = """{"response": {"access_token": "nested-token"}, "status": 200}"""
+        val response = gson.fromJson(json, TokenResponse::class.java)
+        assertEquals("nested-token", response.resolveToken())
+    }
+
+    fun testTokenResponseBareStringResponse() {
+        val json = """{"response": "string-token", "status": 200}"""
+        val response = gson.fromJson(json, TokenResponse::class.java)
+        assertEquals("string-token", response.resolveToken())
+    }
+
+    fun testModelsResponseRealShape() {
+        // Per the Ask Sage OpenAPI spec: response = array of names, data = rich objects.
+        val json = """{"response": ["gpt-4"], "object": "list", "data": [{"id": "gpt-4", "object": "model", "created": "2024", "name": "GPT-4", "owned_by": "openai"}], "status": 200}"""
+        val response = gson.fromJson(json, ModelsResponse::class.java)
+        val models = response.resolveModels()
+        assertEquals(1, models.size)
+        assertEquals("gpt-4", models[0].id)
+        assertEquals("GPT-4", models[0].name)
+        assertEquals("openai", models[0].ownedBy)
+    }
+
+    fun testModelsResponseFallsBackToStringList() {
+        // If only the string list is present, synthesize ModelInfo from names.
+        val json = """{"response": ["model-a", "model-b"], "status": 200}"""
+        val response = gson.fromJson(json, ModelsResponse::class.java)
+        val models = response.resolveModels()
+        assertEquals(2, models.size)
+        assertEquals("model-a", models[0].id)
+        assertEquals("model-a", models[0].name)
     }
 
     fun testModelInfoSerialization() {

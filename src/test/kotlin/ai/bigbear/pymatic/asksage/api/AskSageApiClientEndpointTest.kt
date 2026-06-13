@@ -109,21 +109,7 @@ class AskSageApiClientEndpointTest : BasePlatformTestCase() {
     fun testQueryWithSystemPrompt() {
         val json = """{"response": "test response", "status": 200}"""
         val client = AskSageApiClient("http://localhost")
-        var capturedBody = ""
         client.requestExecutor = HttpRequestExecutor { request ->
-            // Capture the request body for verification
-            capturedBody = request.bodyPublisher().map { pub ->
-                val subscriber = java.net.http.HttpResponse.BodySubscribers.ofString(java.nio.charset.StandardCharsets.UTF_8)
-                val flowSub = object : java.util.concurrent.Flow.Subscriber<java.nio.ByteBuffer> {
-                    val sb = StringBuilder()
-                    override fun onSubscribe(subscription: java.util.concurrent.Flow.Subscription) { subscription.request(Long.MAX_VALUE) }
-                    override fun onNext(item: java.nio.ByteBuffer) { sb.append(java.nio.charset.StandardCharsets.UTF_8.decode(item)) }
-                    override fun onError(throwable: Throwable) {}
-                    override fun onComplete() {}
-                }
-                pub.subscribe(flowSub)
-                flowSub.sb.toString()
-            }.orElse("")
             createMockResponse(200, json)
         }
 
@@ -140,8 +126,7 @@ class AskSageApiClientEndpointTest : BasePlatformTestCase() {
     fun testUpdateBaseUrl() {
         val client = AskSageApiClient("http://original")
         client.updateBaseUrl("http://updated")
-        // Verify the client can still make requests with new URL
-        val json = """{"response":{"data":[]}}"""
+        val json = """{"data":[],"status":200}"""
         client.requestExecutor = HttpRequestExecutor { createMockResponse(200, json) }
         val result = client.getModels("test-token")
         assertNotNull(result)
