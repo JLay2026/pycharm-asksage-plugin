@@ -32,13 +32,15 @@ class ModelRegistryService {
 
         try {
             val response = apiClient.getModels(token)
-            val modelList = response.response?.data
-            if (modelList != null) {
+            val modelList = response.resolveModels()
+            if (modelList.isNotEmpty()) {
                 synchronized(lock) {
                     models = modelList.sortedBy { it.id }
                     lastFetchTime = System.currentTimeMillis()
                 }
                 LOG.info("Fetched ${models.size} models")
+            } else {
+                LOG.warn("Model refresh returned no models")
             }
         } catch (e: AskSageApiException) {
             LOG.warn("Failed to fetch models", e)
