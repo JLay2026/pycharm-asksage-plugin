@@ -17,7 +17,7 @@ object AskSageEndpoints {
     const val LIST_AGENTS = "/server/list-agents"
     const val EXECUTE_AGENT = "/server/execute-agent"
     const val TRAIN = "/server/train"
-    const val COUNT_MONTHLY_TOKENS = "/user/count-monthly-tokens"
+    const val COUNT_MONTHLY_TOKENS = "/server/count-monthly-tokens"
 
     // OpenAI-compatible endpoint
     const val OPENAI_CHAT_COMPLETIONS = "/openai/v1/chat/completions"

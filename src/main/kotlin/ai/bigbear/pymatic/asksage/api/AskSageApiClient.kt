@@ -1,6 +1,7 @@
 package ai.bigbear.pymatic.asksage.api
 
 import com.google.gson.Gson
+import com.google.gson.JsonParser
 import com.google.gson.JsonSyntaxException
 import com.intellij.openapi.diagnostic.logger
 import ai.bigbear.pymatic.asksage.util.NotificationHelper
@@ -151,8 +152,23 @@ class AskSageApiClient(
         return post(AskSageEndpoints.TRAIN, request, token, TrainResponse::class.java)
     }
 
+    /**
+     * count-monthly-tokens returns the count as a bare number/string at the root
+     * (not an object). Parse the raw body tolerantly.
+     */
     fun countMonthlyTokens(token: String): TokenUsageResponse {
-        return post(AskSageEndpoints.COUNT_MONTHLY_TOKENS, null, token, TokenUsageResponse::class.java)
+        val raw = executeRaw(AskSageEndpoints.COUNT_MONTHLY_TOKENS, null, token).trim()
+        return try {
+            val element = JsonParser.parseString(raw)
+            if (element.isJsonObject) {
+                gson.fromJson(element, TokenUsageResponse::class.java)
+            } else {
+                TokenUsageResponse(response = element, status = null)
+            }
+        } catch (e: Exception) {
+            LOG.warn("Could not parse token usage response: $raw", e)
+            TokenUsageResponse(response = null, status = null)
+        }
     }
 
     fun openAiChatCompletions(token: String, request: OpenAiChatRequest): OpenAiChatResponse {
