@@ -348,7 +348,7 @@ class ChatPanel(private val project: Project) : JPanel(BorderLayout()) {
                     LOG.info("Streaming not available, falling back to standard query", e)
                     responseText.clear()
                     val response = apiClient.query(token, queryRequest)
-                    responseText.append(response.response ?: response.message ?: "No response received")
+                    responseText.append(response.answer() ?: "No response received")
 
                     SwingUtilities.invokeAndWait {
                         if (streamingDocOffset > 0) {
@@ -377,7 +377,7 @@ class ChatPanel(private val project: Project) : JPanel(BorderLayout()) {
                     statusLabel.text = "Ready"
                 }
 
-                fetchFollowUpQuestions(token, message, finalResponse, selectedModel)
+                fetchFollowUpQuestions(token, message, selectedModel)
             } catch (e: AskSageApiException) {
                 LOG.warn("Query failed", e)
                 NotificationHelper.error(project, "AskSage Query Failed", e.message ?: "Unknown error")
@@ -522,12 +522,12 @@ class ChatPanel(private val project: Project) : JPanel(BorderLayout()) {
         elapsedLabel.text = ""
     }
 
-    private fun fetchFollowUpQuestions(token: String, message: String, response: String, model: String) {
+    private fun fetchFollowUpQuestions(token: String, message: String, model: String) {
         ApplicationManager.getApplication().executeOnPooledThread {
             try {
-                val followUpResponse = apiClient.getFollowUpQuestions(token, message, response, model)
-                val questions = followUpResponse.response
-                if (!questions.isNullOrEmpty()) {
+                val followUpResponse = apiClient.getFollowUpQuestions(token, message, model)
+                val questions = followUpResponse.questions()
+                if (questions.isNotEmpty()) {
                     SwingUtilities.invokeLater {
                         showFollowUpQuestions(questions)
                     }
