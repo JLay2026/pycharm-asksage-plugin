@@ -29,6 +29,19 @@ class ApiModelsTest : TestCase() {
         assertEquals(request.message, streaming.message)
     }
 
+    fun testQueryResponseAnswerPrefersMessage() {
+        // The generated answer is in `message`; `response` holds a status string.
+        val json = """{"response": "OK", "message": "The answer", "status": 200}"""
+        val r = gson.fromJson(json, QueryResponse::class.java)
+        assertEquals("The answer", r.answer())
+    }
+
+    fun testQueryResponseAnswerFallsBackToResponse() {
+        val json = """{"response": "Only here", "status": 200}"""
+        val r = gson.fromJson(json, QueryResponse::class.java)
+        assertEquals("Only here", r.answer())
+    }
+
     fun testTokenResponseTopLevelAccessToken() {
         val json = """{"access_token": "abc123", "status": 200}"""
         val response = gson.fromJson(json, TokenResponse::class.java)
@@ -38,7 +51,6 @@ class ApiModelsTest : TestCase() {
     }
 
     fun testTokenResponseObjectResponse() {
-        // Real shape on some instances: token nested inside an object `response`.
         val json = """{"response": {"access_token": "nested-token"}, "status": 200}"""
         val response = gson.fromJson(json, TokenResponse::class.java)
         assertEquals("nested-token", response.resolveToken())
@@ -51,7 +63,6 @@ class ApiModelsTest : TestCase() {
     }
 
     fun testModelsResponseRealShape() {
-        // Per the Ask Sage OpenAPI spec: response = array of names, data = rich objects.
         val json = """{"response": ["gpt-4"], "object": "list", "data": [{"id": "gpt-4", "object": "model", "created": "2024", "name": "GPT-4", "owned_by": "openai"}], "status": 200}"""
         val response = gson.fromJson(json, ModelsResponse::class.java)
         val models = response.resolveModels()
@@ -62,7 +73,6 @@ class ApiModelsTest : TestCase() {
     }
 
     fun testModelsResponseFallsBackToStringList() {
-        // If only the string list is present, synthesize ModelInfo from names.
         val json = """{"response": ["model-a", "model-b"], "status": 200}"""
         val response = gson.fromJson(json, ModelsResponse::class.java)
         val models = response.resolveModels()
@@ -79,52 +89,66 @@ class ApiModelsTest : TestCase() {
         assertEquals("openai", model.ownedBy)
     }
 
-    fun testPluginInfoSerialization() {
-        val json = """{"id": "p1", "name": "Test Plugin", "description": "A test", "category": "utility"}"""
+    fun testPluginInfoRealShape() {
+        // API items use plugin_name/title, not name.
+        val json = """{"id": "p1", "plugin_name": "summarize", "title": "Summarize", "description": "A test", "category": "utility"}"""
         val plugin = gson.fromJson(json, PluginInfo::class.java)
         assertEquals("p1", plugin.id)
-        assertEquals("Test Plugin", plugin.name)
-        assertEquals("A test", plugin.description)
+        assertEquals("summarize", plugin.pluginName)
+        assertEquals("Summarize", plugin.displayName)
+        assertEquals("summarize", plugin.identifier)
         assertEquals("utility", plugin.category)
     }
 
     fun testAgentInfoSerialization() {
-        val json = """{"id": "a1", "name": "Test Agent", "description": "An agent"}"""
+        val json = """{"id": 1, "uuid": "u-1", "name": "Test Agent", "description": "An agent"}"""
         val agent = gson.fromJson(json, AgentInfo::class.java)
-        assertEquals("a1", agent.id)
+        assertEquals(1, agent.id)
         assertEquals("Test Agent", agent.name)
         assertEquals("An agent", agent.description)
     }
 
+    fun testExecuteAgentResponseNestedText() {
+        val json = """{"status": 200, "execution_status": "completed", "response": {"response": "agent answer", "type": "text", "source": "node1"}}"""
+        val r = gson.fromJson(json, ExecuteAgentResponse::class.java)
+        assertEquals("agent answer", r.text())
+    }
+
+    fun testFollowUpResponseQuestionsFromJsonArray() {
+        val json = """{"message": "[\"Q1?\", \"Q2?\"]", "status": 200}"""
+        val r = gson.fromJson(json, FollowUpResponse::class.java)
+        val questions = r.questions()
+        assertEquals(2, questions.size)
+        assertEquals("Q1?", questions[0])
+    }
+
+    fun testTokenUsageResponseInteger() {
+        val json = """{"response": 12345, "status": 200}"""
+        val r = gson.fromJson(json, TokenUsageResponse::class.java)
+        assertEquals(12345L, r.count())
+    }
+
     fun testTrainRequestSerialization() {
         val request = TrainRequest(
-            dataset = "my-dataset",
             content = "some code",
-            title = "My Title",
+            forceDataset = "my-dataset",
         )
         val json = gson.toJson(request)
         assertTrue(json.contains("my-dataset"))
         assertTrue(json.contains("some code"))
-        assertTrue(json.contains("My Title"))
-    }
-
-    fun testTokenUsageDataSerialization() {
-        val json = """{"total_tokens": 1000, "monthly_tokens": 500, "daily_tokens": 50, "remaining_tokens": 9500}"""
-        val usage = gson.fromJson(json, TokenUsageData::class.java)
-        assertEquals(1000L, usage.totalTokens)
-        assertEquals(500L, usage.monthlyTokens)
-        assertEquals(50L, usage.dailyTokens)
-        assertEquals(9500L, usage.remainingTokens)
+        assertTrue(json.contains("force_dataset"))
     }
 
     fun testExecutePluginRequestSerialization() {
         val request = ExecutePluginRequest(
-            plugin = "summarize",
-            message = "Hello",
+            pluginName = "summarize",
+            pluginValues = """{"message":"Hello"}""",
             model = "gpt-4",
             live = 1,
         )
         val json = gson.toJson(request)
+        assertTrue(json.contains("plugin_name"))
+        assertTrue(json.contains("plugin_values"))
         assertTrue(json.contains("summarize"))
         assertTrue(json.contains("gpt-4"))
     }
