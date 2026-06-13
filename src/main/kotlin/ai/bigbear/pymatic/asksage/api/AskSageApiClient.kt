@@ -11,7 +11,6 @@ import ai.bigbear.pymatic.asksage.api.models.DatasetsResponse
 import ai.bigbear.pymatic.asksage.api.models.ExecuteAgentRequest
 import ai.bigbear.pymatic.asksage.api.models.ExecuteAgentResponse
 import ai.bigbear.pymatic.asksage.api.models.ExecutePluginRequest
-import ai.bigbear.pymatic.asksage.api.models.ExecutePluginResponse
 import ai.bigbear.pymatic.asksage.api.models.FollowUpRequest
 import ai.bigbear.pymatic.asksage.api.models.FollowUpResponse
 import ai.bigbear.pymatic.asksage.api.models.ModelsResponse
@@ -117,8 +116,8 @@ class AskSageApiClient(
         }
     }
 
-    fun getFollowUpQuestions(token: String, message: String, response: String, model: String): FollowUpResponse {
-        val request = FollowUpRequest(message = message, response = response, model = model)
+    fun getFollowUpQuestions(token: String, message: String, model: String): FollowUpResponse {
+        val request = FollowUpRequest(message = message, model = model)
         return post(AskSageEndpoints.FOLLOW_UP_QUESTIONS, request, token, FollowUpResponse::class.java)
     }
 
@@ -126,8 +125,18 @@ class AskSageApiClient(
         return post(AskSageEndpoints.GET_PLUGINS, null, token, PluginsResponse::class.java)
     }
 
-    fun executePlugin(token: String, request: ExecutePluginRequest): ExecutePluginResponse {
-        return post(AskSageEndpoints.EXECUTE_PLUGIN, request, token, ExecutePluginResponse::class.java)
+    /** execute-plugin returns a bare (often quoted) string body. */
+    fun executePlugin(token: String, request: ExecutePluginRequest): String {
+        val raw = executeRaw(AskSageEndpoints.EXECUTE_PLUGIN, request, token).trim()
+        return if (raw.length >= 2 && raw.startsWith("\"") && raw.endsWith("\"")) {
+            try {
+                gson.fromJson(raw, String::class.java)
+            } catch (e: JsonSyntaxException) {
+                raw
+            }
+        } else {
+            raw
+        }
     }
 
     fun listAgents(token: String): AgentsResponse {
@@ -155,6 +164,17 @@ class AskSageApiClient(
     }
 
     private fun <T> post(endpoint: String, body: Any?, token: String?, responseType: Class<T>): T {
+        val responseBody = executeRaw(endpoint, body, token)
+        return try {
+            gson.fromJson(responseBody, responseType)
+        } catch (e: JsonSyntaxException) {
+            LOG.warn("Failed to parse response from $endpoint", e)
+            throw AskSageApiException("Invalid response format: ${e.message}", e)
+        }
+    }
+
+    /** Performs the POST with retry/backoff and HTTP status handling; returns the raw body. */
+    private fun executeRaw(endpoint: String, body: Any?, token: String?): String {
         val url = "$baseUrl$endpoint"
         val jsonBody = if (body != null) gson.toJson(body) else "{}"
 
@@ -210,13 +230,10 @@ class AskSageApiClient(
                     LOG.warn("API request to $endpoint failed with status ${response.statusCode()}: $responseBody")
                 }
 
-                return gson.fromJson(responseBody, responseType)
+                return responseBody
             } catch (e: IOException) {
                 LOG.warn("Network error calling $endpoint, attempt ${attempt + 1}/$MAX_RETRIES", e)
                 lastException = e
-            } catch (e: JsonSyntaxException) {
-                LOG.warn("Failed to parse response from $endpoint", e)
-                throw AskSageApiException("Invalid response format: ${e.message}", e)
             } catch (e: InterruptedException) {
                 Thread.currentThread().interrupt()
                 throw AskSageApiException("Request interrupted", e)
