@@ -23,11 +23,12 @@ class AskSageToolWindowFactory : ToolWindowFactory {
         }
         toolWindow.contentManager.addContent(pluginsContent)
 
-        val agentPanel = AgentPanel(project)
-        val agentsContent = contentFactory.createContent(agentPanel, "Agents", false).apply {
-            icon = AskSageIcons.Agent
-        }
-        toolWindow.contentManager.addContent(agentsContent)
+        // Agents tab hidden for now (AgentPanel retained for future re-enable).
+        // val agentPanel = AgentPanel(project)
+        // val agentsContent = contentFactory.createContent(agentPanel, "Agents", false).apply {
+        //     icon = AskSageIcons.Agent
+        // }
+        // toolWindow.contentManager.addContent(agentsContent)
 
         val tokenUsagePanel = TokenUsagePanel(project)
         val usageContent = contentFactory.createContent(tokenUsagePanel, "Usage", false).apply {
