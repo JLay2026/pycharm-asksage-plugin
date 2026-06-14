@@ -86,7 +86,7 @@ class AuthManager {
 
     companion object {
         private val LOG = logger<AuthManager>()
-        private const val SUBSYSTEM = "PymaticAskSage"
+        private const val SUBSYSTEM = "AskSage"
         private const val API_KEY_KEY = "apiKey"
         private const val EMAIL_KEY = "email"
         private const val TOKEN_TTL_MS = 23 * 60 * 60 * 1000L

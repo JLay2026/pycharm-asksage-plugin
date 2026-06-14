@@ -12,7 +12,7 @@ import asksage.util.LiveMode
 @Service(Service.Level.APP)
 @State(
     name = "asksage.services.AskSageSettingsState",
-    storages = [Storage("PymaticAskSageSettings.xml")]
+    storages = [Storage("AskSageSettings.xml")]
 )
 class AskSageSettingsState : PersistentStateComponent<AskSageSettingsState> {
     var baseUrl: String = AskSageEndpoints.DEFAULT_BASE_URL

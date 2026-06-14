@@ -76,7 +76,7 @@ class AskSageSettingsComponent {
             AuthManager.getInstance().clearCredentials()
             emailField.text = ""
             apiKeyField.text = ""
-            Messages.showInfoMessage(panel, "Credentials cleared.", "Pymatic AskSage")
+            Messages.showInfoMessage(panel, "Credentials cleared.", "AskSage")
         }
     }
 
@@ -90,7 +90,7 @@ class AskSageSettingsComponent {
         if (choice == Messages.YES) {
             AskSageSettingsState.getInstance().resetToDefaults()
             reset()
-            Messages.showInfoMessage(panel, "Settings reset to defaults.", "Pymatic AskSage")
+            Messages.showInfoMessage(panel, "Settings reset to defaults.", "AskSage")
         }
     }
 

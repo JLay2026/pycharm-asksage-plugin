@@ -7,7 +7,7 @@ class AskSageSettingsConfigurable : Configurable {
 
     private var settingsComponent: AskSageSettingsComponent? = null
 
-    override fun getDisplayName(): String = "Pymatic AskSage"
+    override fun getDisplayName(): String = "AskSage"
 
     override fun createComponent(): JComponent {
         settingsComponent = AskSageSettingsComponent()
