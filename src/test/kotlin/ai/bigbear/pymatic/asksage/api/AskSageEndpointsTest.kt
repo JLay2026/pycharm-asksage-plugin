@@ -53,7 +53,7 @@ class AskSageEndpointsTest : TestCase() {
     }
 
     fun testCountMonthlyTokensEndpoint() {
-        assertEquals("/user/count-monthly-tokens", AskSageEndpoints.COUNT_MONTHLY_TOKENS)
+        assertEquals("/server/count-monthly-tokens", AskSageEndpoints.COUNT_MONTHLY_TOKENS)
     }
 
     fun testOpenAiChatCompletionsEndpoint() {
