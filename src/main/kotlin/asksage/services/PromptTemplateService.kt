@@ -8,7 +8,7 @@ import com.intellij.openapi.components.Storage
 import com.intellij.util.xmlb.XmlSerializerUtil
 
 @Service(Service.Level.APP)
-@State(name = "asksage.services.PromptTemplateService", storages = [Storage("PymaticAskSagePromptTemplates.xml")])
+@State(name = "asksage.services.PromptTemplateService", storages = [Storage("AskSagePromptTemplates.xml")])
 class PromptTemplateService : PersistentStateComponent<PromptTemplateService> {
     var customTemplateNames: MutableList<String> = mutableListOf()
     var customTemplatePrompts: MutableList<String> = mutableListOf()

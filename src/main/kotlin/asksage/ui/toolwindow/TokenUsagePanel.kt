@@ -101,7 +101,7 @@ class TokenUsagePanel(private val project: Project) : JPanel(BorderLayout()) {
 
     private fun loadUsage() {
         if (!authManager.isConfigured()) {
-            statusText.text = "Please configure API credentials in Settings > Tools > Pymatic AskSage"
+            statusText.text = "Please configure API credentials in Settings > Tools > AskSage"
             return
         }
 
