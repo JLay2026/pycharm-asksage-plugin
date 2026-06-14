@@ -160,7 +160,8 @@ data class PluginInfo(
     val category: String? = null,
 ) {
     val displayName: String get() = title ?: pluginName ?: name ?: id ?: "(plugin)"
-    val identifier: String get() = pluginName ?: name ?: id ?: ""
+    // Some plugins only expose `title`; include it so plugin_name is never empty.
+    val identifier: String get() = pluginName ?: title ?: name ?: id ?: ""
 }
 
 data class PluginsResponse(
