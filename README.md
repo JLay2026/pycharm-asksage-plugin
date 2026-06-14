@@ -10,15 +10,18 @@ An IntelliJ Platform plugin that integrates the [AskSage.ai](https://asksage.ai)
 - **Editor Context Actions** — Right-click menu: Explain Code, Refactor, Generate Docs, Ask About File, Send Selection to AskSage
 - **Keyboard Shortcuts** — `Ctrl+Shift+Alt+E` (Explain), `Ctrl+Shift+Alt+R` (Refactor), `Ctrl+Shift+Alt+D` (Docs), `Ctrl+Shift+Alt+A` (Ask), `Ctrl+Shift+Alt+K` (Add to Knowledge Base). Send Selection has no default shortcut — assign one in **Settings > Keymap** if desired
 - **Plugin Browser** — Browse and execute AskSage plugins with results rendered inline
-- **Agent Execution** — Run AskSage agents for complex multi-step tasks
 - **Knowledge Base Training** — Add code from the editor directly to your AskSage datasets
-- **Token Usage Dashboard** — Monitor monthly, daily, and remaining token usage with a color-coded progress bar
+- **Token Usage** — View monthly token usage for the current application
 - **Status Bar Widget** — Current live mode and model displayed at the bottom of the IDE
 - **Secure Authentication** — API key stored securely via IntelliJ PasswordSafe with automatic 24-hour token exchange
 
 ## Data & Privacy
 
 The plugin sends your prompts and any code you explicitly share (selections, files sent via context actions, knowledge-base uploads) to the [Ask Sage](https://asksage.ai) service. No code is transmitted without an explicit user action. Use is governed by the Ask Sage Terms of Service and Privacy Policy; a paid Ask Sage account and API key are required.
+
+### Credentials & uninstalling
+
+Your API key and email are stored in the IDE's secure storage (IntelliJ PasswordSafe), and your preferences (server URL, defaults) are stored in the IDE configuration. **IntelliJ does not remove this data when the plugin is uninstalled.** To remove it, open **Settings > Tools > Pymatic AskSage** and use **Clear Credentials / Sign Out** (removes the stored API key and email) and **Reset Settings** (restores preferences to defaults) before uninstalling.
 
 ## Requirements
 
@@ -59,7 +62,7 @@ src/main/kotlin/ai/bigbear/pymatic/asksage/
   actions/              # Editor context actions (Explain, Refactor, Docs, etc.)
   services/             # Registry services, chat session, settings state
   ui/
-    toolwindow/         # Chat panel, plugin browser, agent panel, token usage, selectors
+    toolwindow/         # Chat panel, plugin browser, token usage, selectors
     settings/           # Settings configurable UI
     statusbar/          # Status bar widget
   util/                 # Markdown renderer, live mode enum, notification helper
@@ -76,8 +79,6 @@ src/main/kotlin/ai/bigbear/pymatic/asksage/
 | `/server/query` | Implemented (standard + streaming) |
 | `/server/follow-up-questions` | Implemented |
 | `/server/get-plugins` | Implemented |
-| `/server/list-agents` | Implemented |
-| `/server/execute-agent` | Implemented |
 | `/server/execute-plugin` | Implemented |
 | `/server/train` | Implemented |
 | `/user/count-monthly-tokens` | Implemented |
