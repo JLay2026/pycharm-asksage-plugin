@@ -1,5 +1,7 @@
 package ai.bigbear.pymatic.asksage.ui.settings
 
+import com.intellij.openapi.ui.Messages
+import com.intellij.ui.JBColor
 import com.intellij.ui.components.JBLabel
 import com.intellij.ui.components.JBPasswordField
 import com.intellij.ui.components.JBTextField
@@ -7,6 +9,8 @@ import com.intellij.util.ui.FormBuilder
 import ai.bigbear.pymatic.asksage.api.auth.AuthManager
 import ai.bigbear.pymatic.asksage.services.AskSageSettingsState
 import ai.bigbear.pymatic.asksage.util.LiveMode
+import java.awt.FlowLayout
+import javax.swing.JButton
 import javax.swing.JComboBox
 import javax.swing.JPanel
 import javax.swing.JSpinner
@@ -22,8 +26,23 @@ class AskSageSettingsComponent {
     private val temperatureSpinner = JSpinner(SpinnerNumberModel(0.7, 0.0, 2.0, 0.1))
     private val reasoningEffortCombo = JComboBox(arrayOf("low", "medium", "high"))
 
+    private val clearCredentialsButton = JButton("Clear Credentials / Sign Out")
+    private val resetSettingsButton = JButton("Reset Settings")
+
     init {
         defaultLiveModeCombo.renderer = LiveModeRenderer()
+
+        val actionsPanel = JPanel(FlowLayout(FlowLayout.LEFT, 8, 0)).apply {
+            add(clearCredentialsButton)
+            add(resetSettingsButton)
+        }
+
+        val persistenceNote = JBLabel(
+            "<html>Your API key and email are stored in the IDE's secure storage and are " +
+                "<b>not removed when the plugin is uninstalled</b>. Use &ldquo;Clear Credentials&rdquo; to remove them.</html>",
+        ).apply {
+            foreground = JBColor.GRAY
+        }
 
         panel = FormBuilder.createFormBuilder()
             .addLabeledComponent(JBLabel("Email:"), emailField, 1, false)
@@ -33,10 +52,46 @@ class AskSageSettingsComponent {
             .addLabeledComponent(JBLabel("Default Live Mode:"), defaultLiveModeCombo, 1, false)
             .addLabeledComponent(JBLabel("Temperature:"), temperatureSpinner, 1, false)
             .addLabeledComponent(JBLabel("Reasoning Effort:"), reasoningEffortCombo, 1, false)
+            .addSeparator()
+            .addComponent(actionsPanel)
+            .addComponent(persistenceNote)
             .addComponentFillVertically(JPanel(), 0)
             .panel
 
+        clearCredentialsButton.addActionListener { onClearCredentials() }
+        resetSettingsButton.addActionListener { onResetSettings() }
+
         reset()
+    }
+
+    private fun onClearCredentials() {
+        val choice = Messages.showYesNoDialog(
+            panel,
+            "Remove the stored API key and email from this IDE's secure storage? " +
+                "You'll need to re-enter them to use the plugin again.",
+            "Clear Credentials",
+            Messages.getQuestionIcon(),
+        )
+        if (choice == Messages.YES) {
+            AuthManager.getInstance().clearCredentials()
+            emailField.text = ""
+            apiKeyField.text = ""
+            Messages.showInfoMessage(panel, "Credentials cleared.", "Pymatic AskSage")
+        }
+    }
+
+    private fun onResetSettings() {
+        val choice = Messages.showYesNoDialog(
+            panel,
+            "Reset the server URL and preferences to their defaults? Your credentials are not affected.",
+            "Reset Settings",
+            Messages.getQuestionIcon(),
+        )
+        if (choice == Messages.YES) {
+            AskSageSettingsState.getInstance().resetToDefaults()
+            reset()
+            Messages.showInfoMessage(panel, "Settings reset to defaults.", "Pymatic AskSage")
+        }
     }
 
     fun isModified(): Boolean {

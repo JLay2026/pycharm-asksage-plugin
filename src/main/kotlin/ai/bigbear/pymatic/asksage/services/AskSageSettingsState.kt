@@ -30,6 +30,17 @@ class AskSageSettingsState : PersistentStateComponent<AskSageSettingsState> {
         XmlSerializerUtil.copyBean(state, this)
     }
 
+    /** Restore all settings (server URL and preferences) to their defaults. Does not touch credentials. */
+    fun resetToDefaults() {
+        baseUrl = AskSageEndpoints.DEFAULT_BASE_URL
+        defaultLiveMode = LiveMode.NO_LIVE.value
+        defaultModel = ""
+        defaultPersona = 0
+        defaultDataset = ""
+        temperature = 0.7
+        reasoningEffort = "medium"
+    }
+
     companion object {
         fun getInstance(): AskSageSettingsState {
             return ApplicationManager.getApplication().getService(AskSageSettingsState::class.java)
