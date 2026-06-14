@@ -1,0 +1,282 @@
+package asksage.api
+
+import com.google.gson.Gson
+import com.google.gson.JsonObject
+import com.google.gson.JsonParser
+import com.google.gson.JsonSyntaxException
+import com.intellij.openapi.diagnostic.logger
+import asksage.util.NotificationHelper
+import asksage.api.models.AgentsResponse
+import asksage.api.models.AnthropicRequest
+import asksage.api.models.AnthropicResponse
+import asksage.api.models.DatasetsResponse
+import asksage.api.models.ExecuteAgentRequest
+import asksage.api.models.ExecuteAgentResponse
+import asksage.api.models.ExecutePluginRequest
+import asksage.api.models.FollowUpRequest
+import asksage.api.models.FollowUpResponse
+import asksage.api.models.ModelsResponse
+import asksage.api.models.OpenAiChatRequest
+import asksage.api.models.OpenAiChatResponse
+import asksage.api.models.PersonasResponse
+import asksage.api.models.PluginsResponse
+import asksage.api.models.QueryRequest
+import asksage.api.models.QueryResponse
+import asksage.api.models.TokenRequest
+import asksage.api.models.TokenResponse
+import asksage.api.models.TokenUsageResponse
+import asksage.api.models.TrainRequest
+import asksage.api.models.TrainResponse
+import java.io.IOException
+import java.net.URI
+import java.net.http.HttpClient
+import java.net.http.HttpRequest
+import java.net.http.HttpResponse
+import java.time.Duration
+import java.util.function.Consumer
+
+class AskSageApiClient(
+    private var baseUrl: String = AskSageEndpoints.DEFAULT_BASE_URL,
+    internal var requestExecutor: HttpRequestExecutor? = null,
+) {
+    private val gson = Gson()
+    private val httpClient: HttpClient = HttpClient.newBuilder()
+        .connectTimeout(Duration.ofSeconds(30))
+        .build()
+
+    fun updateBaseUrl(url: String) {
+        baseUrl = url.trimEnd('/')
+    }
+
+    fun getToken(email: String, apiKey: String): TokenResponse {
+        val request = TokenRequest(email, apiKey)
+        return post(AskSageEndpoints.GET_TOKEN, request, null, TokenResponse::class.java)
+    }
+
+    fun getModels(token: String): ModelsResponse {
+        return post(AskSageEndpoints.GET_MODELS, null, token, ModelsResponse::class.java)
+    }
+
+    fun getPersonas(token: String): PersonasResponse {
+        return post(AskSageEndpoints.GET_PERSONAS, null, token, PersonasResponse::class.java)
+    }
+
+    fun getDatasets(token: String): DatasetsResponse {
+        return post(AskSageEndpoints.GET_DATASETS, null, token, DatasetsResponse::class.java)
+    }
+
+    fun query(token: String, queryRequest: QueryRequest): QueryResponse {
+        return post(AskSageEndpoints.QUERY, queryRequest, token, QueryResponse::class.java)
+    }
+
+    fun queryStreaming(token: String, queryRequest: QueryRequest, onChunk: Consumer<String>) {
+        val streamingRequest = queryRequest.copy(streaming = true)
+        val url = "$baseUrl${AskSageEndpoints.QUERY}"
+        val jsonBody = gson.toJson(streamingRequest)
+
+        val requestBuilder = HttpRequest.newBuilder()
+            .uri(URI.create(url))
+            .header("Content-Type", "application/json")
+            .header("Accept", "text/event-stream")
+            .header("x-access-tokens", token)
+            .timeout(Duration.ofSeconds(300))
+            .POST(HttpRequest.BodyPublishers.ofString(jsonBody))
+
+        val httpRequest = requestBuilder.build()
+
+        try {
+            val response = httpClient.send(httpRequest, HttpResponse.BodyHandlers.ofString())
+
+            if (response.statusCode() !in 200..299) {
+                LOG.warn("Streaming request failed with status ${response.statusCode()}: ${response.body()}")
+                throw AskSageApiException("API error (${response.statusCode()})")
+            }
+
+            val message = extractStreamingMessage(response.body())
+                ?: throw AskSageApiException("Empty or unparseable streaming response")
+            onChunk.accept(message)
+        } catch (e: IOException) {
+            LOG.error("Streaming network error", e)
+            throw AskSageApiException("Network error: ${e.message}", e)
+        } catch (e: InterruptedException) {
+            Thread.currentThread().interrupt()
+            throw AskSageApiException("Request interrupted", e)
+        }
+    }
+
+    private fun extractStreamingMessage(body: String): String? {
+        if (body.isBlank()) return null
+        val pieces = body.split(STREAM_DELIMITER)
+        var best: String? = null
+        var completion: String? = null
+        for (piece in pieces) {
+            val trimmed = piece.trim()
+            if (trimmed.isEmpty()) continue
+            try {
+                val element = JsonParser.parseString(trimmed)
+                if (!element.isJsonObject) continue
+                val obj: JsonObject = element.asJsonObject
+                val msgEl = obj.get("message")
+                val msg = if (msgEl != null && msgEl.isJsonPrimitive) msgEl.asString else null
+                val typeEl = obj.get("type")
+                val type = if (typeEl != null && typeEl.isJsonPrimitive) typeEl.asString else null
+                if (!msg.isNullOrEmpty()) {
+                    best = msg
+                    if (type == "completion") completion = msg
+                }
+            } catch (e: JsonSyntaxException) {
+            }
+        }
+        return completion ?: best
+    }
+
+    fun getFollowUpQuestions(token: String, message: String, model: String): FollowUpResponse {
+        val request = FollowUpRequest(message = message, model = model)
+        return post(AskSageEndpoints.FOLLOW_UP_QUESTIONS, request, token, FollowUpResponse::class.java)
+    }
+
+    fun getPlugins(token: String): PluginsResponse {
+        return post(AskSageEndpoints.GET_PLUGINS, null, token, PluginsResponse::class.java)
+    }
+
+    fun executePlugin(token: String, request: ExecutePluginRequest): String {
+        val raw = executeRaw(AskSageEndpoints.EXECUTE_PLUGIN, request, token).trim()
+        return if (raw.length >= 2 && raw.startsWith("\"") && raw.endsWith("\"")) {
+            try {
+                gson.fromJson(raw, String::class.java)
+            } catch (e: JsonSyntaxException) {
+                raw
+            }
+        } else {
+            raw
+        }
+    }
+
+    fun listAgents(token: String): AgentsResponse {
+        return post(AskSageEndpoints.LIST_AGENTS, null, token, AgentsResponse::class.java)
+    }
+
+    fun executeAgent(token: String, request: ExecuteAgentRequest): ExecuteAgentResponse {
+        return post(AskSageEndpoints.EXECUTE_AGENT, request, token, ExecuteAgentResponse::class.java)
+    }
+
+    fun train(token: String, request: TrainRequest): TrainResponse {
+        return post(AskSageEndpoints.TRAIN, request, token, TrainResponse::class.java)
+    }
+
+    fun countMonthlyTokens(token: String): TokenUsageResponse {
+        val raw = executeRaw(AskSageEndpoints.COUNT_MONTHLY_TOKENS, null, token).trim()
+        return try {
+            val element = JsonParser.parseString(raw)
+            if (element.isJsonObject) {
+                gson.fromJson(element, TokenUsageResponse::class.java)
+            } else {
+                TokenUsageResponse(response = element, status = null)
+            }
+        } catch (e: Exception) {
+            LOG.warn("Could not parse token usage response: $raw", e)
+            TokenUsageResponse(response = null, status = null)
+        }
+    }
+
+    fun openAiChatCompletions(token: String, request: OpenAiChatRequest): OpenAiChatResponse {
+        return post(AskSageEndpoints.OPENAI_CHAT_COMPLETIONS, request, token, OpenAiChatResponse::class.java)
+    }
+
+    fun anthropicMessages(token: String, request: AnthropicRequest): AnthropicResponse {
+        return post(AskSageEndpoints.ANTHROPIC_MESSAGES, request, token, AnthropicResponse::class.java)
+    }
+
+    private fun <T> post(endpoint: String, body: Any?, token: String?, responseType: Class<T>): T {
+        val responseBody = executeRaw(endpoint, body, token)
+        return try {
+            gson.fromJson(responseBody, responseType)
+        } catch (e: JsonSyntaxException) {
+            LOG.warn("Failed to parse response from $endpoint", e)
+            throw AskSageApiException("Invalid response format: ${e.message}", e)
+        }
+    }
+
+    private fun executeRaw(endpoint: String, body: Any?, token: String?): String {
+        val url = "$baseUrl$endpoint"
+        val jsonBody = if (body != null) gson.toJson(body) else "{}"
+
+        val requestBuilder = HttpRequest.newBuilder()
+            .uri(URI.create(url))
+            .header("Content-Type", "application/json")
+            .header("Accept", "application/json")
+            .timeout(Duration.ofSeconds(120))
+            .POST(HttpRequest.BodyPublishers.ofString(jsonBody))
+
+        if (token != null) {
+            requestBuilder.header("x-access-tokens", token)
+        }
+
+        val httpRequest = requestBuilder.build()
+
+        var lastException: Exception? = null
+        for (attempt in 0 until MAX_RETRIES) {
+            try {
+                if (attempt > 0) {
+                    val delayMs = BASE_RETRY_DELAY_MS * (1L shl (attempt - 1))
+                    LOG.info("Retry $attempt for $endpoint after ${delayMs}ms")
+                    Thread.sleep(delayMs)
+                }
+
+                val response = requestExecutor?.execute(httpRequest)
+                    ?: httpClient.send(httpRequest, HttpResponse.BodyHandlers.ofString())
+                val responseBody = response.body()
+
+                if (response.statusCode() in 500..599) {
+                    LOG.warn("Server error ($endpoint): ${response.statusCode()}, attempt ${attempt + 1}/$MAX_RETRIES")
+                    lastException = AskSageApiException("Server error (${response.statusCode()})")
+                    continue
+                }
+
+                if (response.statusCode() == 429) {
+                    LOG.warn("Rate limited ($endpoint), attempt ${attempt + 1}/$MAX_RETRIES")
+                    lastException = AskSageApiException("Rate limited (429)")
+                    continue
+                }
+
+                if (response.statusCode() == 401) {
+                    LOG.warn("Unauthorized (401) for $endpoint")
+                    NotificationHelper.warn(
+                        null,
+                        "AskSage Auth",
+                        "Authentication expired. Please re-enter your credentials in Settings.",
+                    )
+                    throw AskSageAuthException("Authentication expired (401). Please re-enter credentials.")
+                }
+
+                if (response.statusCode() !in 200..299) {
+                    LOG.warn("API request to $endpoint failed with status ${response.statusCode()}: $responseBody")
+                }
+
+                return responseBody
+            } catch (e: IOException) {
+                LOG.warn("Network error calling $endpoint, attempt ${attempt + 1}/$MAX_RETRIES", e)
+                lastException = e
+            } catch (e: InterruptedException) {
+                Thread.currentThread().interrupt()
+                throw AskSageApiException("Request interrupted", e)
+            }
+        }
+
+        throw AskSageApiException(
+            "Request to $endpoint failed after $MAX_RETRIES attempts: ${lastException?.message}",
+            lastException,
+        )
+    }
+
+    companion object {
+        private val LOG = logger<AskSageApiClient>()
+        private const val MAX_RETRIES = 3
+        private const val BASE_RETRY_DELAY_MS = 1000L
+        private const val STREAM_DELIMITER = "@|@sep@|@"
+    }
+}
+
+open class AskSageApiException(message: String, cause: Throwable? = null) : RuntimeException(message, cause)
+
+class AskSageAuthException(message: String, cause: Throwable? = null) : AskSageApiException(message, cause)
