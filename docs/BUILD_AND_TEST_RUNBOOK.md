@@ -1,4 +1,4 @@
-# Pymatic AskSage — Local Build & Smoke-Test Runbook
+# AskSage — Local Build & Smoke-Test Runbook
 
 How to compile the plugin from source and verify it by installing the built ZIP into a JetBrains IDE. For publishing to the JetBrains Marketplace, see [`MARKETPLACE_SUBMISSION_RUNBOOK.md`](MARKETPLACE_SUBMISSION_RUNBOOK.md).
 
@@ -64,7 +64,7 @@ java -version   # should print openjdk version "21.0.x"
 ./gradlew buildPlugin
 ```
 
-**Output:** `build/distributions/Pymatic AskSage-1.0.0.zip` — this is the installable/distributable artifact.
+**Output:** `build/distributions/AskSage-1.0.2.zip` — this is the installable/distributable artifact.
 
 Notes:
 - The **first build is slow** (several minutes): it downloads IntelliJ IDEA 2025.2 and dependencies. Later builds are fast (Gradle build + configuration cache are enabled).
@@ -88,11 +88,11 @@ Notes:
 Installing the built ZIP exercises the packaged distribution — proving the plugin's classes wire up at runtime, which `runIde` and CI alone do not fully guarantee.
 
 1. Open **PyCharm** (repeat in IntelliJ IDEA if available).
-2. **Settings → Plugins → ⚙ (gear) → Install Plugin from Disk…** → select `build/distributions/Pymatic AskSage-1.0.0.zip` → **restart**.
+2. **Settings → Plugins → ⚙ (gear) → Install Plugin from Disk…** → select `build/distributions/AskSage-1.0.2.zip` → **restart**.
    - An **"unsigned plugin" warning is expected** for local installs; signing happens only at Marketplace upload.
 3. Smoke checklist:
    - [ ] Plugin appears in the Plugins list with correct name, icon, and description
-   - [ ] **Settings → Tools → Pymatic AskSage** opens; email + API key save and persist across restart
+   - [ ] **Settings → Tools → AskSage** opens; email + API key save and persist across restart
    - [ ] **AskSage** tool window opens (right sidebar); model list loads; one chat round-trip succeeds
    - [ ] Editor context actions fire: Explain Code / Refactor / Generate Documentation / Ask About This File / Send Selection / Add to Knowledge Base
    - [ ] Remapped shortcuts work: `Ctrl+Shift+Alt+E/R/D/A/K`; and `Ctrl+Alt+S` still opens IDE Settings (no conflict)
@@ -124,6 +124,6 @@ If all boxes pass, the build is good to proceed toward signing and Marketplace s
 # Full local validation, start to finish
 git pull origin main
 ./gradlew clean buildPlugin check verifyPlugin
-# → build/distributions/Pymatic AskSage-1.0.0.zip
+# → build/distributions/AskSage-1.0.2.zip
 # → install from disk in PyCharm and run the §5 checklist
 ```
