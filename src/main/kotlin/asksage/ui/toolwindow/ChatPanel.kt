@@ -120,7 +120,7 @@ class ChatPanel(private val project: Project) : JPanel(BorderLayout()) {
     private fun sendMessage() {
         val message = inputArea.text.trim()
         if (message.isEmpty()) return
-        if (!authManager.isConfigured()) { appendMessage(MessageRole.ERROR, "Please configure your API key and email in Settings > Tools > Pymatic AskSage", null); return }
+        if (!authManager.isConfigured()) { appendMessage(MessageRole.ERROR, "Please configure your API key and email in Settings > Tools > AskSage", null); return }
         val selectedModel = (modelSelector.selectedItem as? ModelInfo)?.id
         if (selectedModel.isNullOrBlank()) { appendMessage(MessageRole.ERROR, "Please select a model", null); return }
         inputArea.text = ""
