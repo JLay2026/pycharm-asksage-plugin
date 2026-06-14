@@ -1,0 +1,45 @@
+package asksage.services
+
+import com.intellij.openapi.application.ApplicationManager
+import com.intellij.openapi.components.Service
+import com.intellij.openapi.diagnostic.logger
+import asksage.api.AskSageApiClient
+import asksage.api.AskSageApiException
+import asksage.api.auth.AuthManager
+import asksage.api.models.ModelInfo
+import asksage.util.NotificationHelper
+
+@Service(Service.Level.APP)
+class ModelRegistryService {
+    @Volatile private var models: List<ModelInfo> = emptyList()
+    @Volatile private var lastFetchTime: Long = 0
+    private val lock = Any()
+    fun getModels(): List<ModelInfo> = models
+    fun getModelsByProvider(): Map<String, List<ModelInfo>> = models.groupBy { it.ownedBy ?: "Unknown" }
+    fun refreshModels(apiClient: AskSageApiClient) {
+        val authManager = AuthManager.getInstance()
+        val token = authManager.getAccessToken(apiClient) ?: return
+        try {
+            val response = apiClient.getModels(token)
+            val modelList = response.resolveModels()
+            if (modelList.isNotEmpty()) {
+                synchronized(lock) {
+                    models = modelList.sortedBy { it.id }
+                    lastFetchTime = System.currentTimeMillis()
+                }
+                LOG.info("Fetched ${models.size} models")
+            } else {
+                LOG.warn("Model refresh returned no models")
+            }
+        } catch (e: AskSageApiException) {
+            LOG.warn("Failed to fetch models", e)
+            NotificationHelper.warn(null, "AskSage", "Failed to refresh models: ${e.message}")
+        }
+    }
+    fun needsRefresh(): Boolean = models.isEmpty() || System.currentTimeMillis() - lastFetchTime > REFRESH_INTERVAL_MS
+    companion object {
+        private val LOG = logger<ModelRegistryService>()
+        private const val REFRESH_INTERVAL_MS = 30 * 60 * 1000L
+        fun getInstance(): ModelRegistryService = ApplicationManager.getApplication().getService(ModelRegistryService::class.java)
+    }
+}
