@@ -1,6 +1,8 @@
 package ai.bigbear.pymatic.asksage.api
 
 import com.google.gson.Gson
+import com.google.gson.JsonObject
+import com.google.gson.JsonParser
 import com.google.gson.JsonSyntaxException
 import com.intellij.openapi.diagnostic.logger
 import ai.bigbear.pymatic.asksage.util.NotificationHelper
@@ -25,9 +27,7 @@ import ai.bigbear.pymatic.asksage.api.models.TokenResponse
 import ai.bigbear.pymatic.asksage.api.models.TokenUsageResponse
 import ai.bigbear.pymatic.asksage.api.models.TrainRequest
 import ai.bigbear.pymatic.asksage.api.models.TrainResponse
-import java.io.BufferedReader
 import java.io.IOException
-import java.io.InputStreamReader
 import java.net.URI
 import java.net.http.HttpClient
 import java.net.http.HttpRequest
@@ -69,6 +69,14 @@ class AskSageApiClient(
         return post(AskSageEndpoints.QUERY, queryRequest, token, QueryResponse::class.java)
     }
 
+    /**
+     * The /server/query streaming response is a sequence of JSON envelopes
+     * separated by the literal delimiter "@|@sep@|@" (not SSE). Each envelope is
+     * { response, message, type, ... } where type is "yield" (status) or
+     * "completion" (final answer in `message`). We surface the completion
+     * message (or the last non-empty message). If nothing usable is parsed we
+     * throw so the caller can fall back to the non-streaming query() path.
+     */
     fun queryStreaming(token: String, queryRequest: QueryRequest, onChunk: Consumer<String>) {
         val streamingRequest = queryRequest.copy(streaming = true)
         val url = "$baseUrl${AskSageEndpoints.QUERY}"
@@ -85,28 +93,16 @@ class AskSageApiClient(
         val httpRequest = requestBuilder.build()
 
         try {
-            val response = httpClient.send(httpRequest, HttpResponse.BodyHandlers.ofInputStream())
+            val response = httpClient.send(httpRequest, HttpResponse.BodyHandlers.ofString())
 
             if (response.statusCode() !in 200..299) {
-                val body = response.body().bufferedReader().readText()
-                LOG.warn("Streaming request failed with status ${response.statusCode()}: $body")
+                LOG.warn("Streaming request failed with status ${response.statusCode()}: ${response.body()}")
                 throw AskSageApiException("API error (${response.statusCode()})")
             }
 
-            BufferedReader(InputStreamReader(response.body())).use { reader ->
-                var line: String?
-                while (reader.readLine().also { line = it } != null) {
-                    val currentLine = line ?: continue
-                    if (currentLine.startsWith("data: ")) {
-                        val data = currentLine.removePrefix("data: ").trim()
-                        if (data == "[DONE]") break
-                        onChunk.accept(data)
-                    } else if (currentLine.isNotBlank() && !currentLine.startsWith(":")) {
-                        // Non-SSE response — treat as plain text chunk
-                        onChunk.accept(currentLine)
-                    }
-                }
-            }
+            val message = extractStreamingMessage(response.body())
+                ?: throw AskSageApiException("Empty or unparseable streaming response")
+            onChunk.accept(message)
         } catch (e: IOException) {
             LOG.error("Streaming network error", e)
             throw AskSageApiException("Network error: ${e.message}", e)
@@ -114,6 +110,34 @@ class AskSageApiClient(
             Thread.currentThread().interrupt()
             throw AskSageApiException("Request interrupted", e)
         }
+    }
+
+    /** Parse the @|@sep@|@-delimited envelopes and return the best answer text. */
+    private fun extractStreamingMessage(body: String): String? {
+        if (body.isBlank()) return null
+        val pieces = body.split(STREAM_DELIMITER)
+        var best: String? = null
+        var completion: String? = null
+        for (piece in pieces) {
+            val trimmed = piece.trim()
+            if (trimmed.isEmpty()) continue
+            try {
+                val element = JsonParser.parseString(trimmed)
+                if (!element.isJsonObject) continue
+                val obj: JsonObject = element.asJsonObject
+                val msgEl = obj.get("message")
+                val msg = if (msgEl != null && msgEl.isJsonPrimitive) msgEl.asString else null
+                val typeEl = obj.get("type")
+                val type = if (typeEl != null && typeEl.isJsonPrimitive) typeEl.asString else null
+                if (!msg.isNullOrEmpty()) {
+                    best = msg
+                    if (type == "completion") completion = msg
+                }
+            } catch (e: JsonSyntaxException) {
+                // Not a JSON envelope; skip this piece.
+            }
+        }
+        return completion ?: best
     }
 
     fun getFollowUpQuestions(token: String, message: String, model: String): FollowUpResponse {
@@ -151,8 +175,23 @@ class AskSageApiClient(
         return post(AskSageEndpoints.TRAIN, request, token, TrainResponse::class.java)
     }
 
+    /**
+     * count-monthly-tokens returns the count as a bare number/string at the root
+     * (not an object). Parse the raw body tolerantly.
+     */
     fun countMonthlyTokens(token: String): TokenUsageResponse {
-        return post(AskSageEndpoints.COUNT_MONTHLY_TOKENS, null, token, TokenUsageResponse::class.java)
+        val raw = executeRaw(AskSageEndpoints.COUNT_MONTHLY_TOKENS, null, token).trim()
+        return try {
+            val element = JsonParser.parseString(raw)
+            if (element.isJsonObject) {
+                gson.fromJson(element, TokenUsageResponse::class.java)
+            } else {
+                TokenUsageResponse(response = element, status = null)
+            }
+        } catch (e: Exception) {
+            LOG.warn("Could not parse token usage response: $raw", e)
+            TokenUsageResponse(response = null, status = null)
+        }
     }
 
     fun openAiChatCompletions(token: String, request: OpenAiChatRequest): OpenAiChatResponse {
@@ -250,6 +289,7 @@ class AskSageApiClient(
         private val LOG = logger<AskSageApiClient>()
         private const val MAX_RETRIES = 3
         private const val BASE_RETRY_DELAY_MS = 1000L
+        private const val STREAM_DELIMITER = "@|@sep@|@"
     }
 }
 
