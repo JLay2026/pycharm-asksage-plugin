@@ -4,6 +4,30 @@
 
 ## [Unreleased]
 
+## [1.0.4] - 2026-06-15
+
+### Changed
+
+- Replaced plugin icons with the approved AskSage owl artwork: Marketplace icon (`META-INF/pluginIcon.svg`), tool-window/status-bar icon (`icons/asksage.svg`), Chat tab (`icons/chat.svg`), and Plugins tab (`icons/plugin.svg`).
+
+
+## [1.0.3] - 2026-06-15
+
+### Added
+
+- Settings toggle **Show suggested follow-up questions** (Settings > Tools > AskSage; default on).
+- Settings toggle **Include government (gov) models** (default off; gov = model name/id contains `-gov`).
+
+### Changed
+
+- Hid the **Dataset** selector in the Chat tool window (retained internally for a future release).
+- Selected model now persists when switching between the Chat and Plugins tabs.
+
+### Fixed
+
+- Follow-up suggestions no longer render a clickable "Disabled" (or other sentinel) item when the server returns one.
+
+
 ### Added
 
 - **Milestone 10: Marketplace Publishing**

@@ -4,6 +4,8 @@ import com.intellij.openapi.project.Project
 import com.intellij.openapi.wm.ToolWindow
 import com.intellij.openapi.wm.ToolWindowFactory
 import com.intellij.ui.content.ContentFactory
+import com.intellij.ui.content.ContentManagerEvent
+import com.intellij.ui.content.ContentManagerListener
 import asksage.util.AskSageIcons
 
 class AskSageToolWindowFactory : ToolWindowFactory {
@@ -35,6 +37,16 @@ class AskSageToolWindowFactory : ToolWindowFactory {
             icon = AskSageIcons.Usage
         }
         toolWindow.contentManager.addContent(usageContent)
+
+        // Keep the model dropdown in sync across the Chat and Plugins tabs.
+        toolWindow.contentManager.addContentManagerListener(object : ContentManagerListener {
+            override fun selectionChanged(event: ContentManagerEvent) {
+                when (val component = event.content.component) {
+                    is ChatPanel -> component.syncSelectedModel()
+                    is PluginBrowserPanel -> component.syncSelectedModel()
+                }
+            }
+        })
     }
 
     override fun shouldBeAvailable(project: Project) = true

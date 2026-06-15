@@ -23,6 +23,7 @@ class AskSageSettingsState : PersistentStateComponent<AskSageSettingsState> {
     var temperature: Double = 0.7
     var reasoningEffort: String = "medium"
     var showFollowUpQuestions: Boolean = true
+    var includeGovModels: Boolean = false
 
     override fun getState(): AskSageSettingsState = this
     override fun loadState(state: AskSageSettingsState) { XmlSerializerUtil.copyBean(state, this) }
@@ -35,6 +36,7 @@ class AskSageSettingsState : PersistentStateComponent<AskSageSettingsState> {
         temperature = 0.7
         reasoningEffort = "medium"
         showFollowUpQuestions = true
+        includeGovModels = false
     }
     companion object { fun getInstance(): AskSageSettingsState = ApplicationManager.getApplication().getService(AskSageSettingsState::class.java) }
 }
