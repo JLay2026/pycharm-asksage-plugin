@@ -13,6 +13,8 @@ import asksage.api.auth.AuthManager
 import asksage.api.models.ModelInfo
 import asksage.api.models.QueryRequest
 import asksage.services.AskSageSettingsState
+import asksage.services.AskSageRefreshListener
+import asksage.services.AskSageRefreshTopic
 import asksage.services.ChatMessage
 import asksage.services.ChatSessionService
 import asksage.services.DatasetRegistryService
@@ -150,6 +152,8 @@ class ChatPanel(private val project: Project) : JPanel(BorderLayout()) {
         setupUI()
         setupActions()
         loadRegistries()
+        ApplicationManager.getApplication().messageBus.connect(project)
+            .subscribe(AskSageRefreshTopic.TOPIC, AskSageRefreshListener { reload() })
     }
 
     private fun setupUI() {
@@ -563,6 +567,10 @@ class ChatPanel(private val project: Project) : JPanel(BorderLayout()) {
         followUpPanel.isVisible = true
         followUpPanel.revalidate()
         followUpPanel.repaint()
+    }
+
+    fun reload() {
+        loadRegistries()
     }
 
     fun syncSelectedModel() {
