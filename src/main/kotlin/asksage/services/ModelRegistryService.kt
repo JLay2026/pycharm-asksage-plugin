@@ -15,6 +15,10 @@ class ModelRegistryService {
     @Volatile private var lastFetchTime: Long = 0
     private val lock = Any()
     fun getModels(): List<ModelInfo> = models
+    fun isGovModel(model: ModelInfo): Boolean =
+        model.id.contains("-gov", ignoreCase = true) || (model.name?.contains("-gov", ignoreCase = true) == true)
+    fun getVisibleModels(includeGov: Boolean): List<ModelInfo> =
+        if (includeGov) models else models.filter { !isGovModel(it) }
     fun getModelsByProvider(): Map<String, List<ModelInfo>> = models.groupBy { it.ownedBy ?: "Unknown" }
     fun refreshModels(apiClient: AskSageApiClient) {
         val authManager = AuthManager.getInstance()

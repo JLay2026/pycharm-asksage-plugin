@@ -27,6 +27,7 @@ class AskSageSettingsComponent {
     private val temperatureSpinner = JSpinner(SpinnerNumberModel(0.7, 0.0, 2.0, 0.1))
     private val reasoningEffortCombo = JComboBox(arrayOf("low", "medium", "high"))
     private val showFollowUpsCheckbox = JCheckBox("Show suggested follow-up questions")
+    private val includeGovModelsCheckbox = JCheckBox("Include government (gov) models")
 
     private val clearCredentialsButton = JButton("Clear Credentials / Sign Out")
     private val resetSettingsButton = JButton("Reset Settings")
@@ -55,6 +56,7 @@ class AskSageSettingsComponent {
             .addLabeledComponent(JBLabel("Temperature:"), temperatureSpinner, 1, false)
             .addLabeledComponent(JBLabel("Reasoning Effort:"), reasoningEffortCombo, 1, false)
             .addComponent(showFollowUpsCheckbox)
+            .addComponent(includeGovModelsCheckbox)
             .addSeparator()
             .addComponent(actionsPanel)
             .addComponent(persistenceNote)
@@ -107,7 +109,8 @@ class AskSageSettingsComponent {
             (defaultLiveModeCombo.selectedItem as LiveMode).value != settings.defaultLiveMode ||
             (temperatureSpinner.value as Double) != settings.temperature ||
             reasoningEffortCombo.selectedItem != settings.reasoningEffort ||
-            showFollowUpsCheckbox.isSelected != settings.showFollowUpQuestions
+            showFollowUpsCheckbox.isSelected != settings.showFollowUpQuestions ||
+            includeGovModelsCheckbox.isSelected != settings.includeGovModels
     }
 
     fun apply() {
@@ -125,6 +128,7 @@ class AskSageSettingsComponent {
         settings.temperature = temperatureSpinner.value as Double
         settings.reasoningEffort = reasoningEffortCombo.selectedItem as String
         settings.showFollowUpQuestions = showFollowUpsCheckbox.isSelected
+        settings.includeGovModels = includeGovModelsCheckbox.isSelected
     }
 
     fun reset() {
@@ -138,6 +142,7 @@ class AskSageSettingsComponent {
         temperatureSpinner.value = settings.temperature
         reasoningEffortCombo.selectedItem = settings.reasoningEffort
         showFollowUpsCheckbox.isSelected = settings.showFollowUpQuestions
+        includeGovModelsCheckbox.isSelected = settings.includeGovModels
     }
 
     private class LiveModeRenderer : javax.swing.DefaultListCellRenderer() {
