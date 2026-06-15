@@ -134,17 +134,26 @@ data class FollowUpResponse(
     fun questions(): List<String> {
         val text = (message?.takeIf { it.isNotBlank() } ?: response ?: "").trim()
         if (text.isEmpty()) return emptyList()
+        // The server returns a sentinel (e.g. "Disabled") when follow-up
+        // question generation is turned off for the account/instance. Treat
+        // any such sentinel as "no questions" so it is not shown as a clickable
+        // suggestion that would just re-send the sentinel word as a prompt.
+        if (text.lowercase() in SENTINELS) return emptyList()
         if (text.startsWith("[")) {
             try {
                 val arr = Gson().fromJson(text, Array<String>::class.java)
-                if (arr != null) return arr.filter { it.isNotBlank() }
+                if (arr != null) return arr.filter { it.isNotBlank() && it.trim().lowercase() !in SENTINELS }
             } catch (e: Exception) {
                 // fall through to line parsing
             }
         }
         return text.lines()
             .map { it.trim().removePrefix("-").removePrefix("*").trim().trimStart('0', '1', '2', '3', '4', '5', '6', '7', '8', '9', '.', ')', ' ') }
-            .filter { it.isNotBlank() }
+            .filter { it.isNotBlank() && it.lowercase() !in SENTINELS }
+    }
+
+    companion object {
+        private val SENTINELS = setOf("disabled", "not enabled", "feature disabled", "n/a", "none", "null")
     }
 }
 

@@ -11,6 +11,7 @@ import asksage.services.AskSageSettingsState
 import asksage.util.LiveMode
 import java.awt.FlowLayout
 import javax.swing.JButton
+import javax.swing.JCheckBox
 import javax.swing.JComboBox
 import javax.swing.JPanel
 import javax.swing.JSpinner
@@ -25,6 +26,7 @@ class AskSageSettingsComponent {
     private val defaultLiveModeCombo = JComboBox(LiveMode.entries.toTypedArray())
     private val temperatureSpinner = JSpinner(SpinnerNumberModel(0.7, 0.0, 2.0, 0.1))
     private val reasoningEffortCombo = JComboBox(arrayOf("low", "medium", "high"))
+    private val showFollowUpsCheckbox = JCheckBox("Show suggested follow-up questions")
 
     private val clearCredentialsButton = JButton("Clear Credentials / Sign Out")
     private val resetSettingsButton = JButton("Reset Settings")
@@ -52,6 +54,7 @@ class AskSageSettingsComponent {
             .addLabeledComponent(JBLabel("Default Live Mode:"), defaultLiveModeCombo, 1, false)
             .addLabeledComponent(JBLabel("Temperature:"), temperatureSpinner, 1, false)
             .addLabeledComponent(JBLabel("Reasoning Effort:"), reasoningEffortCombo, 1, false)
+            .addComponent(showFollowUpsCheckbox)
             .addSeparator()
             .addComponent(actionsPanel)
             .addComponent(persistenceNote)
@@ -103,7 +106,8 @@ class AskSageSettingsComponent {
             baseUrlField.text != settings.baseUrl ||
             (defaultLiveModeCombo.selectedItem as LiveMode).value != settings.defaultLiveMode ||
             (temperatureSpinner.value as Double) != settings.temperature ||
-            reasoningEffortCombo.selectedItem != settings.reasoningEffort
+            reasoningEffortCombo.selectedItem != settings.reasoningEffort ||
+            showFollowUpsCheckbox.isSelected != settings.showFollowUpQuestions
     }
 
     fun apply() {
@@ -120,6 +124,7 @@ class AskSageSettingsComponent {
         settings.defaultLiveMode = (defaultLiveModeCombo.selectedItem as LiveMode).value
         settings.temperature = temperatureSpinner.value as Double
         settings.reasoningEffort = reasoningEffortCombo.selectedItem as String
+        settings.showFollowUpQuestions = showFollowUpsCheckbox.isSelected
     }
 
     fun reset() {
@@ -132,6 +137,7 @@ class AskSageSettingsComponent {
         defaultLiveModeCombo.selectedItem = LiveMode.fromValue(settings.defaultLiveMode)
         temperatureSpinner.value = settings.temperature
         reasoningEffortCombo.selectedItem = settings.reasoningEffort
+        showFollowUpsCheckbox.isSelected = settings.showFollowUpQuestions
     }
 
     private class LiveModeRenderer : javax.swing.DefaultListCellRenderer() {
