@@ -63,7 +63,7 @@ class PluginBrowserPanel(private val project: Project) : JPanel(BorderLayout()) 
         }
     }
 
-    private val modelSelector = ModelSelector { /* selection tracked via selectedItem */ }
+    private val modelSelector = ModelSelector { modelId -> settings.defaultModel = modelId }
 
     private val inputArea = JBTextArea(3, 0).apply {
         lineWrap = true
@@ -196,6 +196,12 @@ class PluginBrowserPanel(private val project: Project) : JPanel(BorderLayout()) 
         }
     }
 
+    fun syncSelectedModel() {
+        if (settings.defaultModel.isNotBlank()) {
+            modelSelector.setSelectedModelId(settings.defaultModel)
+        }
+    }
+
     private fun loadData() {
         if (!authManager.isConfigured()) return
 
@@ -210,7 +216,7 @@ class PluginBrowserPanel(private val project: Project) : JPanel(BorderLayout()) 
                 if (modelRegistry.needsRefresh()) {
                     modelRegistry.refreshModels(apiClient)
                 }
-                val models = modelRegistry.getModels()
+                val models = modelRegistry.getVisibleModels(settings.includeGovModels)
 
                 SwingUtilities.invokeLater {
                     pluginComboModel.removeAllElements()
