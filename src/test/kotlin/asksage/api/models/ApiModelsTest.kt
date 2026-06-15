@@ -122,6 +122,20 @@ class ApiModelsTest : TestCase() {
         assertEquals("Q1?", questions[0])
     }
 
+    fun testFollowUpResponseDisabledSentinelReturnsEmpty() {
+        // When follow-up generation is off server-side, the API returns a
+        // sentinel like "Disabled"; it must not become a clickable suggestion.
+        val r = gson.fromJson("""{"message": "Disabled", "status": 200}""", FollowUpResponse::class.java)
+        assertTrue(r.questions().isEmpty())
+    }
+
+    fun testFollowUpResponseFiltersSentinelFromList() {
+        val r = gson.fromJson("""{"message": "What next?\nnone", "status": 200}""", FollowUpResponse::class.java)
+        val questions = r.questions()
+        assertEquals(1, questions.size)
+        assertEquals("What next?", questions[0])
+    }
+
     fun testTokenUsageResponseInteger() {
         val json = """{"response": 12345, "status": 200}"""
         val r = gson.fromJson(json, TokenUsageResponse::class.java)
