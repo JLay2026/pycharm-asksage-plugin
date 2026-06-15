@@ -70,7 +70,7 @@ class AskSageApiClientEndpointTest : BasePlatformTestCase() {
     fun testOpenAiChatCompletions401ThrowsAuthException() {
         val client = AskSageApiClient("http://localhost")
         client.requestExecutor = HttpRequestExecutor {
-            createMockResponse(401, """${""}{"error":"Unauthorized"}""")
+            createMockResponse(401, """{"error":"Unauthorized"}""")
         }
 
         val request = asksage.api.models.OpenAiChatRequest(
@@ -107,7 +107,7 @@ class AskSageApiClientEndpointTest : BasePlatformTestCase() {
     }
 
     fun testQueryWithSystemPrompt() {
-        val json = """${""}{"response": "test response", "status": 200}"""
+        val json = """{"response": "test response", "status": 200}"""
         val client = AskSageApiClient("http://localhost")
         client.requestExecutor = HttpRequestExecutor { request ->
             createMockResponse(200, json)
@@ -126,7 +126,7 @@ class AskSageApiClientEndpointTest : BasePlatformTestCase() {
     fun testUpdateBaseUrl() {
         val client = AskSageApiClient("http://original")
         client.updateBaseUrl("http://updated")
-        val json = """${""}{"data":[],"status":200}"""
+        val json = """{"data":[],"status":200}"""
         client.requestExecutor = HttpRequestExecutor { createMockResponse(200, json) }
         val result = client.getModels("test-token")
         assertNotNull(result)

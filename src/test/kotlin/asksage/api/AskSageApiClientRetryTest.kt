@@ -27,7 +27,7 @@ class AskSageApiClientRetryTest : BasePlatformTestCase() {
     }
 
     fun testSuccessOnFirstAttempt() {
-        val json = """${""}{"data":[],"status":200}"""
+        val json = """{"data":[],"status":200}"""
         val client = AskSageApiClient("http://localhost")
         var callCount = 0
         client.requestExecutor = HttpRequestExecutor {
@@ -40,7 +40,7 @@ class AskSageApiClientRetryTest : BasePlatformTestCase() {
     }
 
     fun testRetryOn500ThenSuccess() {
-        val json = """${""}{"data":[],"status":200}"""
+        val json = """{"data":[],"status":200}"""
         val client = AskSageApiClient("http://localhost")
         var callCount = 0
         client.requestExecutor = HttpRequestExecutor {
@@ -57,7 +57,7 @@ class AskSageApiClientRetryTest : BasePlatformTestCase() {
     }
 
     fun testRetryOn429ThenSuccess() {
-        val json = """${""}{"data":[],"status":200}"""
+        val json = """{"data":[],"status":200}"""
         val client = AskSageApiClient("http://localhost")
         var callCount = 0
         client.requestExecutor = HttpRequestExecutor {
@@ -90,7 +90,7 @@ class AskSageApiClientRetryTest : BasePlatformTestCase() {
     }
 
     fun testRetryOnIOException() {
-        val json = """${""}{"data":[],"status":200}"""
+        val json = """{"data":[],"status":200}"""
         val client = AskSageApiClient("http://localhost")
         var callCount = 0
         client.requestExecutor = HttpRequestExecutor {
@@ -161,7 +161,7 @@ class AskSageApiClientRetryTest : BasePlatformTestCase() {
         var callCount = 0
         client.requestExecutor = HttpRequestExecutor {
             callCount++
-            createMockResponse(401, """${""}{"error":"Unauthorized"}""")
+            createMockResponse(401, """{"error":"Unauthorized"}""")
         }
         try {
             client.getModels("test-token")
