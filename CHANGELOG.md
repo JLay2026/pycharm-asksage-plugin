@@ -4,6 +4,13 @@
 
 ## [Unreleased]
 
+## [1.0.5] - 2026-06-15
+
+### Added
+
+- **Test Connection** and **Test Model Discovery** buttons in Settings → Tools → AskSage, each with a pass/fail status indicator (green check / red x).
+- A successful test now **live-refreshes the plugin** — the model, persona, and dataset dropdowns repopulate in open tool windows without an IDE restart.
+
 ## [1.0.4] - 2026-06-15
 
 ### Changed
