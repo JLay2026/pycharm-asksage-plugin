@@ -37,6 +37,12 @@ class AskSageSettingsComponent {
     private val reasoningEffortCombo = JComboBox(arrayOf("low", "medium", "high"))
     private val showFollowUpsCheckbox = JCheckBox("Show suggested follow-up questions")
     private val includeGovModelsCheckbox = JCheckBox("Include government (gov) models")
+    private val preferredModelCombo = JComboBox<String>().apply { isEditable = true }
+    private val preferredModelNote = JBLabel(
+        "<html>Starting model for new sessions (persists across restarts). "
+            + "Leave blank to use the last-used or first available model. "
+            + "Run <b>Test Connection</b> to refresh this list.</html>",
+    ).apply { foreground = JBColor.GRAY }
 
     private val clearCredentialsButton = JButton("Clear Credentials / Sign Out")
     private val resetSettingsButton = JButton("Reset Settings")
@@ -79,6 +85,8 @@ class AskSageSettingsComponent {
             .addLabeledComponent(JBLabel("Reasoning Effort:"), reasoningEffortCombo, 1, false)
             .addComponent(showFollowUpsCheckbox)
             .addComponent(includeGovModelsCheckbox)
+            .addLabeledComponent(JBLabel("Preferred Model:"), preferredModelCombo, 1, false)
+            .addComponent(preferredModelNote)
             .addSeparator()
             .addComponent(actionsPanel)
             .addComponent(persistenceNote)
@@ -223,6 +231,25 @@ class AskSageSettingsComponent {
         }
     }
 
+    private fun preferredModelValue(): String =
+        (preferredModelCombo.editor.item as? String)?.trim().orEmpty()
+
+    /** Populate the preferred-model dropdown from the cached discovered models. */
+    private fun loadPreferredModelOptions() {
+        val current = AskSageSettingsState.getInstance().preferredModel
+        val includeGov = includeGovModelsCheckbox.isSelected
+        val ids = ModelRegistryService.getInstance().getVisibleModels(includeGov).map { it.id }
+        preferredModelCombo.removeAllItems()
+        if (current.isNotBlank() && ids.none { it == current }) {
+            preferredModelCombo.addItem(current)
+        }
+        for (id in ids) {
+            preferredModelCombo.addItem(id)
+        }
+        preferredModelCombo.selectedItem = current
+        preferredModelCombo.editor.item = current
+    }
+
     fun isModified(): Boolean {
         val authManager = AuthManager.getInstance()
         val settings = AskSageSettingsState.getInstance()
@@ -234,7 +261,8 @@ class AskSageSettingsComponent {
             (temperatureSpinner.value as Double) != settings.temperature ||
             reasoningEffortCombo.selectedItem != settings.reasoningEffort ||
             showFollowUpsCheckbox.isSelected != settings.showFollowUpQuestions ||
-            includeGovModelsCheckbox.isSelected != settings.includeGovModels
+            includeGovModelsCheckbox.isSelected != settings.includeGovModels ||
+            preferredModelValue() != settings.preferredModel
     }
 
     fun apply() {
@@ -253,6 +281,7 @@ class AskSageSettingsComponent {
         settings.reasoningEffort = reasoningEffortCombo.selectedItem as String
         settings.showFollowUpQuestions = showFollowUpsCheckbox.isSelected
         settings.includeGovModels = includeGovModelsCheckbox.isSelected
+        settings.preferredModel = preferredModelValue()
     }
 
     fun reset() {
@@ -267,6 +296,7 @@ class AskSageSettingsComponent {
         reasoningEffortCombo.selectedItem = settings.reasoningEffort
         showFollowUpsCheckbox.isSelected = settings.showFollowUpQuestions
         includeGovModelsCheckbox.isSelected = settings.includeGovModels
+        loadPreferredModelOptions()
     }
 
     private class LiveModeRenderer : javax.swing.DefaultListCellRenderer() {

@@ -147,6 +147,7 @@ class ChatPanel(private val project: Project) : JPanel(BorderLayout()) {
     private var streamingStartTime: Long = 0
     private var elapsedTimer: Timer? = null
     private var streamingDocOffset = 0
+    private var initialModelApplied = false
 
     init {
         setupUI()
@@ -592,8 +593,14 @@ class ChatPanel(private val project: Project) : JPanel(BorderLayout()) {
             val models = modelRegistry.getVisibleModels(settings.includeGovModels)
             SwingUtilities.invokeLater {
                 modelSelector.updateModels(models)
-                if (settings.defaultModel.isNotBlank()) {
-                    modelSelector.setSelectedModelId(settings.defaultModel)
+                val targetModel = if (!initialModelApplied) {
+                    initialModelApplied = true
+                    settings.preferredModel.ifBlank { settings.defaultModel }
+                } else {
+                    settings.defaultModel
+                }
+                if (targetModel.isNotBlank()) {
+                    modelSelector.setSelectedModelId(targetModel)
                 }
             }
 

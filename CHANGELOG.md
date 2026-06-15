@@ -4,6 +4,12 @@
 
 ## [Unreleased]
 
+## [1.0.6] - 2026-06-15
+
+### Added
+
+- **Preferred Model** setting (Settings → Tools → AskSage): choose a starting model that the plugin selects automatically at the start of each session and remembers across IDE restarts. Leave blank to fall back to the last-used or first available model.
+
 ## [1.0.5] - 2026-06-15
 
 ### Added

@@ -66,6 +66,7 @@ class PluginBrowserPanel(private val project: Project) : JPanel(BorderLayout()) 
     }
 
     private val modelSelector = ModelSelector { modelId -> settings.defaultModel = modelId }
+    private var initialModelApplied = false
 
     private val inputArea = JBTextArea(3, 0).apply {
         lineWrap = true
@@ -230,8 +231,14 @@ class PluginBrowserPanel(private val project: Project) : JPanel(BorderLayout()) 
                     pluginComboModel.removeAllElements()
                     plugins.forEach { pluginComboModel.addElement(it) }
                     modelSelector.updateModels(models)
-                    if (settings.defaultModel.isNotBlank()) {
-                        modelSelector.setSelectedModelId(settings.defaultModel)
+                    val targetModel = if (!initialModelApplied) {
+                        initialModelApplied = true
+                        settings.preferredModel.ifBlank { settings.defaultModel }
+                    } else {
+                        settings.defaultModel
+                    }
+                    if (targetModel.isNotBlank()) {
+                        modelSelector.setSelectedModelId(targetModel)
                     }
                     statusLabel.text = "Loaded ${plugins.size} plugins"
                 }
