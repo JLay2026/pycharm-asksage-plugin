@@ -16,12 +16,15 @@ data class EditorContext(
 )
 
 object EditorContextService {
+
     fun getEditorContext(project: Project): EditorContext? {
         val editor = FileEditorManager.getInstance(project).selectedTextEditor ?: return null
         val document = editor.document
         val virtualFile = editor.virtualFile ?: return null
+
         val selectedText = getSelectedText(editor)
         val selectionRange = getSelectionLineRange(editor)
+
         return EditorContext(
             fileName = virtualFile.name,
             filePath = virtualFile.path,
@@ -32,20 +35,27 @@ object EditorContextService {
             selectionEndLine = selectionRange?.second,
         )
     }
+
     fun getSelectedText(editor: Editor): String? {
         val selectionModel = editor.selectionModel
         val text = selectionModel.selectedText
         return if (text.isNullOrBlank()) null else text
     }
+
     private fun getSelectionLineRange(editor: Editor): Pair<Int, Int>? {
         val selectionModel = editor.selectionModel
         if (!selectionModel.hasSelection()) return null
+
         val document = editor.document
         val startLine = document.getLineNumber(selectionModel.selectionStart) + 1
         val endLine = document.getLineNumber(selectionModel.selectionEnd) + 1
         return Pair(startLine, endLine)
     }
-    internal fun detectLanguage(file: VirtualFile): String = detectLanguageFromFileName(file.name)
+
+    internal fun detectLanguage(file: VirtualFile): String {
+        return detectLanguageFromFileName(file.name)
+    }
+
     internal fun detectLanguageFromFileName(fileName: String): String {
         val extension = if ('.' in fileName) fileName.substringAfterLast('.').lowercase() else null
         return when (extension) {
@@ -78,21 +88,24 @@ object EditorContextService {
             else -> extension ?: "Unknown"
         }
     }
+
     fun buildFileContextPrompt(context: EditorContext): String {
         val sb = StringBuilder()
         sb.appendLine("File: ${context.fileName} (${context.language})")
         sb.appendLine("Path: ${context.filePath}")
+
         if (context.selectedText != null) {
             sb.appendLine("Selected code (lines ${context.selectionStartLine}-${context.selectionEndLine}):")
-            sb.appendLine("\`\`\`${context.language.lowercase()}")
+            sb.appendLine("```${context.language.lowercase()}")
             sb.appendLine(context.selectedText)
-            sb.appendLine("\`\`\`")
+            sb.appendLine("```")
         } else {
             sb.appendLine("Full file content:")
-            sb.appendLine("\`\`\`${context.language.lowercase()}")
+            sb.appendLine("```${context.language.lowercase()}")
             sb.appendLine(context.fullContent)
-            sb.appendLine("\`\`\`")
+            sb.appendLine("```")
         }
+
         return sb.toString()
     }
 }
