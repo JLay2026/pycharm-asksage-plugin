@@ -16,6 +16,8 @@ import asksage.api.models.ModelInfo
 import asksage.api.models.PluginInfo
 import asksage.services.AskSageSettingsState
 import asksage.services.ModelRegistryService
+import asksage.services.AskSageRefreshListener
+import asksage.services.AskSageRefreshTopic
 import asksage.util.LiveMode
 import asksage.util.MarkdownRenderer
 import asksage.util.NotificationHelper
@@ -92,6 +94,8 @@ class PluginBrowserPanel(private val project: Project) : JPanel(BorderLayout()) 
         setupUI()
         setupActions()
         loadData()
+        ApplicationManager.getApplication().messageBus.connect(project)
+            .subscribe(AskSageRefreshTopic.TOPIC, AskSageRefreshListener { reload() })
     }
 
     private fun setupUI() {
@@ -194,6 +198,10 @@ class PluginBrowserPanel(private val project: Project) : JPanel(BorderLayout()) 
                 }
             }
         }
+    }
+
+    fun reload() {
+        loadData()
     }
 
     fun syncSelectedModel() {
