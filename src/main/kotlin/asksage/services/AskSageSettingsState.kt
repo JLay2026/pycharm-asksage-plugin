@@ -18,6 +18,7 @@ class AskSageSettingsState : PersistentStateComponent<AskSageSettingsState> {
     var baseUrl: String = AskSageEndpoints.DEFAULT_BASE_URL
     var defaultLiveMode: Int = LiveMode.NO_LIVE.value
     var defaultModel: String = ""
+    var preferredModel: String = ""
     var defaultPersona: Int = 0
     var defaultDataset: String = ""
     var temperature: Double = 0.7
@@ -31,6 +32,7 @@ class AskSageSettingsState : PersistentStateComponent<AskSageSettingsState> {
         baseUrl = AskSageEndpoints.DEFAULT_BASE_URL
         defaultLiveMode = LiveMode.NO_LIVE.value
         defaultModel = ""
+        preferredModel = ""
         defaultPersona = 0
         defaultDataset = ""
         temperature = 0.7
