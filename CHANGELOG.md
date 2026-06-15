@@ -394,7 +394,7 @@
 
 ### Added
 
-- GitHub Actions — Reduce the number of concurrent builds
+- GitHub Actions: Reduce the number of concurrent builds
 
 ### Changed
 
