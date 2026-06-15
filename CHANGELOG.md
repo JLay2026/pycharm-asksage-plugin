@@ -4,6 +4,13 @@
 
 ## [Unreleased]
 
+## [1.0.4] - 2026-06-15
+
+### Changed
+
+- Replaced plugin icons with the approved AskSage owl artwork: Marketplace icon (`META-INF/pluginIcon.svg`), tool-window/status-bar icon (`icons/asksage.svg`), Chat tab (`icons/chat.svg`), and Plugins tab (`icons/plugin.svg`).
+
+
 ## [1.0.3] - 2026-06-15
 
 ### Added
