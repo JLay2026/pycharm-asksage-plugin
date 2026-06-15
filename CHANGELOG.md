@@ -1,6 +1,6 @@
 <!-- Keep a Changelog guide -> https://keepachangelog.com -->
 
-# Pymatic AskSage Plugin Changelog
+# AskSage Plugin Changelog
 
 ## [Unreleased]
 
@@ -72,7 +72,7 @@
 - **Milestone 1: Foundation**
   - AskSage API client (JDK HttpClient, Gson DTOs)
   - AuthManager with PasswordSafe-backed credential storage and 24-hour token exchange
-  - Settings UI (Settings > Tools > Pymatic AskSage)
+  - Settings UI (Settings > Tools > AskSage)
   - Chat tool window with 3-way live mode toggle and dynamic model selector
   - Add operator function for resource bundle key access in `MyBundle`
 

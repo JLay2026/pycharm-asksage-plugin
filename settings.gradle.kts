@@ -1,6 +1,6 @@
 import org.jetbrains.intellij.platform.gradle.extensions.intellijPlatform
 
-rootProject.name = "Pymatic AskSage"
+rootProject.name = "AskSage"
 
 pluginManagement {
     plugins {

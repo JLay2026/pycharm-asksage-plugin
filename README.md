@@ -1,4 +1,4 @@
-# Pymatic AskSage Plugin
+# AskSage Plugin
 
 An IntelliJ Platform plugin that integrates the [AskSage.ai](https://asksage.ai) API directly into JetBrains IDEs, providing conversational AI assistance with user-selectable internet access modes and dynamic model selection.
 
@@ -21,7 +21,7 @@ The plugin sends your prompts and any code you explicitly share (selections, fil
 
 ### Credentials & uninstalling
 
-Your API key and email are stored in the IDE's secure storage (IntelliJ PasswordSafe), and your preferences (server URL, defaults) are stored in the IDE configuration. **IntelliJ does not remove this data when the plugin is uninstalled.** To remove it, open **Settings > Tools > Pymatic AskSage** and use **Clear Credentials / Sign Out** (removes the stored API key and email) and **Reset Settings** (restores preferences to defaults) before uninstalling.
+Your API key and email are stored in the IDE's secure storage (IntelliJ PasswordSafe), and your preferences (server URL, defaults) are stored in the IDE configuration. **IntelliJ does not remove this data when the plugin is uninstalled.** To remove it, open **Settings > Tools > AskSage** and use **Clear Credentials / Sign Out** (removes the stored API key and email) and **Reset Settings** (restores preferences to defaults) before uninstalling.
 
 ## Requirements
 
@@ -31,7 +31,7 @@ Your API key and email are stored in the IDE's secure storage (IntelliJ Password
 ## Getting Started
 
 1. Install the plugin from the JetBrains Marketplace (or build from source)
-2. Go to **Settings > Tools > Pymatic AskSage**
+2. Go to **Settings > Tools > AskSage**
 3. Enter your AskSage email and API key
 4. Open the **AskSage** tool window (right sidebar)
 5. Select a model, choose your live mode, and start chatting
@@ -57,7 +57,7 @@ To run tests:
 ## Architecture
 
 ```
-src/main/kotlin/ai/bigbear/pymatic/asksage/
+src/main/kotlin/asksage/
   api/                  # AskSage API client, endpoints, auth, DTOs
   actions/              # Editor context actions (Explain, Refactor, Docs, etc.)
   services/             # Registry services, chat session, settings state

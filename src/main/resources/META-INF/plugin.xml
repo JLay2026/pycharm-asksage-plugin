@@ -1,10 +1,10 @@
 <!-- Plugin Configuration File. Read more: https://plugins.jetbrains.com/docs/intellij/plugin-configuration-file.html -->
 <idea-plugin>
-    <id>ai.bigbear.pymatic.asksage</id>
-    <name>Pymatic AskSage</name>
+    <id>asksage</id>
+    <name>AskSage</name>
     <vendor email="jason.layman@bigbear.ai" url="https://github.com/JLay2026/pycharm-asksage-plugin">BigBear.ai LLC</vendor>
     <description><![CDATA[
-        <p><b>Pymatic AskSage</b> integrates the <a href="https://asksage.ai">AskSage.ai</a> API directly into your
+        <p><b>AskSage</b> integrates the <a href="https://asksage.ai">AskSage.ai</a> API directly into your
         JetBrains IDE, providing conversational AI assistance with user-selectable internet access modes and
         dynamic model selection across all major AI providers.</p>
 
@@ -16,9 +16,8 @@
             <li><b>Prompt Templates</b> — Built-in templates for Code Review, Security Audit, Performance Analysis, Unit Test Generation, Architecture Review, and more</li>
             <li><b>Editor Integration</b> — Right-click context menu: Explain Code, Refactor, Generate Docs, Ask About File, Send Selection (with keyboard shortcuts)</li>
             <li><b>Plugin Browser</b> — Browse and execute AskSage plugins with results rendered inline</li>
-            <li><b>Agent Execution</b> — Run AskSage agents for complex multi-step tasks</li>
             <li><b>Knowledge Base Training</b> — Add code from the editor directly to your AskSage datasets</li>
-            <li><b>Token Usage Dashboard</b> — Monitor monthly, daily, and remaining token usage with visual progress bar</li>
+            <li><b>Token Usage</b> — View monthly token usage for the current application</li>
             <li><b>Multi-Project Awareness</b> — Automatic project language detection for contextual queries</li>
             <li><b>Conversation Export</b> — Export conversations as Markdown or JSON with timestamps</li>
             <li><b>Secure Authentication</b> — API key stored securely via IntelliJ PasswordSafe with automatic token exchange</li>
@@ -27,7 +26,7 @@
         <h3>Getting Started</h3>
         <ol>
             <li>Install the plugin from the JetBrains Marketplace</li>
-            <li>Go to <b>Settings &gt; Tools &gt; Pymatic AskSage</b></li>
+            <li>Go to <b>Settings &gt; Tools &gt; AskSage</b></li>
             <li>Enter your AskSage API email and API key</li>
             <li>Open the <b>AskSage</b> tool window (right sidebar) and start chatting</li>
         </ol>
@@ -50,7 +49,7 @@
 
     <extensions defaultExtensionNs="com.intellij">
         <toolWindow
-            factoryClass="ai.bigbear.pymatic.asksage.ui.toolwindow.AskSageToolWindowFactory"
+            factoryClass="asksage.ui.toolwindow.AskSageToolWindowFactory"
             id="AskSage"
             anchor="right"
             icon="/icons/asksage.svg"
@@ -58,45 +57,45 @@
 
         <applicationConfigurable
             parentId="tools"
-            instance="ai.bigbear.pymatic.asksage.ui.settings.AskSageSettingsConfigurable"
-            id="ai.bigbear.pymatic.asksage.ui.settings.AskSageSettingsConfigurable"
-            displayName="Pymatic AskSage"
+            instance="asksage.ui.settings.AskSageSettingsConfigurable"
+            id="asksage.ui.settings.AskSageSettingsConfigurable"
+            displayName="AskSage"
         />
 
         <applicationService
-            serviceImplementation="ai.bigbear.pymatic.asksage.api.auth.AuthManager"
+            serviceImplementation="asksage.api.auth.AuthManager"
         />
 
         <applicationService
-            serviceImplementation="ai.bigbear.pymatic.asksage.services.AskSageSettingsState"
+            serviceImplementation="asksage.services.AskSageSettingsState"
         />
 
         <applicationService
-            serviceImplementation="ai.bigbear.pymatic.asksage.services.ModelRegistryService"
+            serviceImplementation="asksage.services.ModelRegistryService"
         />
 
         <applicationService
-            serviceImplementation="ai.bigbear.pymatic.asksage.services.PersonaRegistryService"
+            serviceImplementation="asksage.services.PersonaRegistryService"
         />
 
         <applicationService
-            serviceImplementation="ai.bigbear.pymatic.asksage.services.DatasetRegistryService"
+            serviceImplementation="asksage.services.DatasetRegistryService"
         />
 
         <projectService
-            serviceImplementation="ai.bigbear.pymatic.asksage.services.ChatSessionService"
+            serviceImplementation="asksage.services.ChatSessionService"
         />
 
         <projectService
-            serviceImplementation="ai.bigbear.pymatic.asksage.services.ProjectContextService"
+            serviceImplementation="asksage.services.ProjectContextService"
         />
 
         <applicationService
-            serviceImplementation="ai.bigbear.pymatic.asksage.services.PromptTemplateService"
+            serviceImplementation="asksage.services.PromptTemplateService"
         />
 
         <statusBarWidgetFactory
-            implementation="ai.bigbear.pymatic.asksage.ui.statusbar.AskSageStatusBarWidgetFactory"
+            implementation="asksage.ui.statusbar.AskSageStatusBarWidgetFactory"
             id="AskSageStatus"
         />
 
@@ -112,7 +111,7 @@
             <add-to-group group-id="EditorPopupMenu" anchor="last"/>
 
             <action id="AskSage.ExplainCode"
-                    class="ai.bigbear.pymatic.asksage.actions.ExplainCodeAction"
+                    class="asksage.actions.ExplainCodeAction"
                     text="Explain Code"
                     description="Ask AskSage to explain the selected code or current file"
                     icon="/icons/chat.svg">
@@ -120,7 +119,7 @@
             </action>
 
             <action id="AskSage.RefactorCode"
-                    class="ai.bigbear.pymatic.asksage.actions.RefactorCodeAction"
+                    class="asksage.actions.RefactorCodeAction"
                     text="Refactor with AskSage"
                     description="Get refactoring suggestions from AskSage"
                     icon="/icons/chat.svg">
@@ -128,7 +127,7 @@
             </action>
 
             <action id="AskSage.GenerateDocs"
-                    class="ai.bigbear.pymatic.asksage.actions.GenerateDocsAction"
+                    class="asksage.actions.GenerateDocsAction"
                     text="Generate Documentation"
                     description="Generate documentation for the selected code or current file"
                     icon="/icons/chat.svg">
@@ -136,7 +135,7 @@
             </action>
 
             <action id="AskSage.AskAboutFile"
-                    class="ai.bigbear.pymatic.asksage.actions.AskAboutFileAction"
+                    class="asksage.actions.AskAboutFileAction"
                     text="Ask About This File..."
                     description="Ask AskSage a question about the current file"
                     icon="/icons/chat.svg">
@@ -146,7 +145,7 @@
             <separator/>
 
             <action id="AskSage.SendSelection"
-                    class="ai.bigbear.pymatic.asksage.actions.SendSelectionToAskSageAction"
+                    class="asksage.actions.SendSelectionToAskSageAction"
                     text="Send Selection to AskSage"
                     description="Send selected code to AskSage chat"
                     icon="/icons/chat.svg">
@@ -155,7 +154,7 @@
             <separator/>
 
             <action id="AskSage.AddToKnowledgeBase"
-                    class="ai.bigbear.pymatic.asksage.actions.AddToKnowledgeBaseAction"
+                    class="asksage.actions.AddToKnowledgeBaseAction"
                     text="Add to Knowledge Base"
                     description="Add selected code or current file to an AskSage dataset"
                     icon="/icons/plugin.svg">

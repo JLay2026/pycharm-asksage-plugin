@@ -1,6 +1,6 @@
-# Pymatic AskSage — JetBrains Marketplace Submission Runbook
+# AskSage — JetBrains Marketplace Submission Runbook
 
-A step-by-step guide to publishing the Pymatic AskSage plugin on the [JetBrains Marketplace](https://plugins.jetbrains.com). Written for first-time submitters — no prior marketplace experience needed.
+A step-by-step guide to publishing the AskSage plugin on the [JetBrains Marketplace](https://plugins.jetbrains.com). Written for first-time submitters — no prior marketplace experience needed.
 
 > **Gates before first upload:**
 > 1. Local-install smoke test of the built ZIP must pass (Step 9d).
@@ -139,7 +139,7 @@ You'll be prompted for several fields. Here's what to enter:
 | Locality Name | Your city (e.g., `Springfield`) |
 | Organization Name | `BigBear.ai LLC` |
 | Organizational Unit Name | Press Enter to skip |
-| Common Name | `Pymatic AskSage Plugin Signing` |
+| Common Name | `AskSage Plugin Signing` |
 | Email Address | `jason.layman@bigbear.ai` |
 
 ### Step 4e: Verify your files
@@ -165,7 +165,7 @@ The publish token lets the CI/CD pipeline upload new versions automatically.
 2. Click your **profile icon** (top-right) → **"My Tokens"**
    - Direct link: [https://plugins.jetbrains.com/author/me/tokens](https://plugins.jetbrains.com/author/me/tokens)
 3. Click **"Create New Token"**
-4. Give it a name like `pymatic-asksage-publish`
+4. Give it a name like `asksage-publish`
 5. Click **"Generate Token"**
 6. **Copy the token immediately** — it will only be shown once!
 7. Save it somewhere secure (password manager recommended)
@@ -286,11 +286,11 @@ Before submitting, verify all metadata is correct. These values come from `plugi
 
 ### In `src/main/resources/META-INF/plugin.xml`
 
-- [ ] **`<id>`** — Unique plugin identifier: `ai.bigbear.pymatic.asksage`
+- [ ] **`<id>`** — Unique plugin identifier: `asksage`
   - Must be globally unique across all JetBrains plugins
   - Cannot use `org.jetbrains` or `com.jetbrains` prefixes (reserved)
   - Cannot change after first publication (it's your permanent ID)
-- [ ] **`<name>`** — Display name: `Pymatic AskSage`
+- [ ] **`<name>`** — Display name: `AskSage`
   - 1–4 words recommended (max 60 characters)
   - Do not include "Plugin", "JetBrains", or IDE names
   - Must be unique on the marketplace
@@ -306,7 +306,7 @@ Before submitting, verify all metadata is correct. These values come from `plugi
 ### In `gradle.properties`
 
 - [ ] **`version`** — `1.0.0` (current). Uses semantic versioning: `MAJOR.MINOR.PATCH`
-- [ ] **`group`** — `ai.bigbear.pymatic.asksage`
+- [ ] **`group`** — `asksage`
 - [ ] **`pluginRepositoryUrl`** — `https://github.com/JLay2026/pycharm-asksage-plugin`
 
 ### In `build.gradle.kts`
@@ -342,7 +342,7 @@ cd pycharm-asksage-plugin
 
 This creates a ZIP file at:
 ```
-build/distributions/Pymatic AskSage-1.0.0.zip
+build/distributions/AskSage-1.0.2.zip
 ```
 
 ### Step 9b: Verify the build
@@ -375,11 +375,11 @@ The signed plugin will be at `build/distributions/` with a `-signed` suffix.
 Install the actual packaged ZIP into a clean IDE — this exercises the real distribution in a way `runIde` and CI do not.
 
 1. Open **PyCharm** (primary target; repeat in IntelliJ IDEA if available)
-2. **Settings → Plugins → ⚙ → Install Plugin from Disk…** → select `build/distributions/Pymatic AskSage-1.0.0.zip` → restart
+2. **Settings → Plugins → ⚙ → Install Plugin from Disk…** → select `build/distributions/AskSage-1.0.2.zip` → restart
    - An "unsigned plugin" warning is expected for local installs — signing happens at Marketplace upload
 3. Smoke checklist:
    - [ ] Plugin appears in the Plugins list with correct name, icon, and description
-   - [ ] **Settings → Tools → Pymatic AskSage** opens; credentials save and persist
+   - [ ] **Settings → Tools → AskSage** opens; credentials save and persist
    - [ ] AskSage tool window opens; model list loads; one chat round-trip succeeds
    - [ ] Each editor context action fires: Explain / Refactor / Docs / Ask / Send Selection / Add to KB
    - [ ] Remapped shortcuts work (`Ctrl+Shift+Alt+E/R/D/A/K`) and `Ctrl+Alt+S` still opens Settings
@@ -402,7 +402,7 @@ Only proceed to vendor profile / signing keys (Steps 2–6) once this passes.
 1. Go to [https://plugins.jetbrains.com](https://plugins.jetbrains.com) and sign in
 2. Click your **profile icon** → **"Upload plugin"**
 3. Fill in the form:
-   - **Plugin file:** Click "Choose File" and select the ZIP from `build/distributions/Pymatic AskSage-1.0.0.zip`
+   - **Plugin file:** Click "Choose File" and select the ZIP from `build/distributions/AskSage-1.0.2.zip`
    - **License:** Select **Apache License 2.0** (the repository license) and provide the source code link `https://github.com/JLay2026/pycharm-asksage-plugin` — open-source submissions require a public source link
    - **Tags:** Select relevant tags:
      - `AI Assistant`
@@ -483,7 +483,7 @@ Once the first version is uploaded manually and approved, all future versions ca
 
 ### After approval
 
-- Your plugin will appear at: `https://plugins.jetbrains.com/plugin/XXXXX-pymatic-asksage` (XXXXX is your numeric plugin ID)
+- Your plugin will appear at: `https://plugins.jetbrains.com/plugin/XXXXX-asksage` (XXXXX is your numeric plugin ID)
 - Users can install it from **Settings → Plugins → Marketplace** in any IntelliJ-based IDE (IntelliJ IDEA, PyCharm, WebStorm, etc.)
 - You'll be able to see download stats on your vendor dashboard
 
@@ -553,7 +553,7 @@ If you need to change the icon after publishing:
 
 ### Can't find the plugin after approval
 
-- Search for "Pymatic AskSage" in **Settings → Plugins → Marketplace** in your IDE
+- Search for "AskSage" in **Settings → Plugins → Marketplace** in your IDE
 - Make sure your IDE version is 2025.2 or newer (the `sinceBuild` is set to `252`)
 - If you uploaded to the `beta` channel, users need to add the beta channel in their IDE plugin settings
 
