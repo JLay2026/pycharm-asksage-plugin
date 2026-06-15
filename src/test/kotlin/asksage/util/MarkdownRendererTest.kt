@@ -1,60 +1,73 @@
 package asksage.util
 
 import junit.framework.TestCase
+import javax.swing.JTextPane
 
 class MarkdownRendererTest : TestCase() {
 
-    fun testRenderHeading() {
-        val markdown = "# Heading"
-        val rendered = MarkdownRenderer.render(markdown)
-        assertTrue(rendered.contains("Heading"))
+    fun testRenderPlainText() {
+        val pane = JTextPane()
+        MarkdownRenderer.render(pane, "Hello world")
+        val text = pane.styledDocument.getText(0, pane.styledDocument.length)
+        assertTrue(text.contains("Hello world"))
     }
 
-    fun testRenderBold() {
-        val markdown = "**bold text**"
-        val rendered = MarkdownRenderer.render(markdown)
-        assertTrue(rendered.contains("bold"))
-    }
-
-    fun testRenderItalic() {
-        val markdown = "*italic text*"
-        val rendered = MarkdownRenderer.render(markdown)
-        assertTrue(rendered.contains("italic"))
-    }
-
-    fun testRenderCode() {
-        val markdown = "`code`"
-        val rendered = MarkdownRenderer.render(markdown)
-        assertTrue(rendered.contains("code"))
+    fun testRenderHeader() {
+        val pane = JTextPane()
+        MarkdownRenderer.render(pane, "# Title")
+        val text = pane.styledDocument.getText(0, pane.styledDocument.length)
+        assertTrue(text.contains("Title"))
     }
 
     fun testRenderCodeBlock() {
-        val markdown = """```kotlin
-fun main() {}
-```"""
-        val rendered = MarkdownRenderer.render(markdown)
-        assertTrue(rendered.contains("main"))
+        val pane = JTextPane()
+        MarkdownRenderer.render(pane, "```kotlin\nfun main() {}\n```")
+        val text = pane.styledDocument.getText(0, pane.styledDocument.length)
+        assertTrue(text.contains("fun main() {}"))
     }
 
-    fun testRenderLink() {
-        val markdown = "[Google](https://google.com)"
-        val rendered = MarkdownRenderer.render(markdown)
-        assertTrue(rendered.contains("Google"))
+    fun testRenderBulletList() {
+        val pane = JTextPane()
+        MarkdownRenderer.render(pane, "- Item 1\n- Item 2")
+        val text = pane.styledDocument.getText(0, pane.styledDocument.length)
+        assertTrue(text.contains("Item 1"))
+        assertTrue(text.contains("Item 2"))
     }
 
-    fun testRenderList() {
-        val markdown = """- Item 1
-- Item 2
-- Item 3"""
-        val rendered = MarkdownRenderer.render(markdown)
-        assertTrue(rendered.contains("Item"))
+    fun testRenderBlockquote() {
+        val pane = JTextPane()
+        MarkdownRenderer.render(pane, "> Quote text")
+        val text = pane.styledDocument.getText(0, pane.styledDocument.length)
+        assertTrue(text.contains("Quote text"))
     }
 
-    fun testRenderTable() {
-        val markdown = """| Header 1 | Header 2 |
-|----------|----------|
-| Value 1  | Value 2  |"""
-        val rendered = MarkdownRenderer.render(markdown)
-        assertTrue(rendered.contains("Header"))
+    fun testRenderHorizontalRule() {
+        val pane = JTextPane()
+        MarkdownRenderer.render(pane, "---")
+        val text = pane.styledDocument.getText(0, pane.styledDocument.length)
+        assertTrue(text.contains("─"))
+    }
+
+    fun testRenderMultipleHeaders() {
+        val pane = JTextPane()
+        MarkdownRenderer.render(pane, "# H1\n## H2\n### H3")
+        val text = pane.styledDocument.getText(0, pane.styledDocument.length)
+        assertTrue(text.contains("H1"))
+        assertTrue(text.contains("H2"))
+        assertTrue(text.contains("H3"))
+    }
+
+    fun testRenderEmptyString() {
+        val pane = JTextPane()
+        MarkdownRenderer.render(pane, "")
+        val text = pane.styledDocument.getText(0, pane.styledDocument.length)
+        assertEquals("", text.trim())
+    }
+
+    fun testRenderUnclosedCodeBlock() {
+        val pane = JTextPane()
+        MarkdownRenderer.render(pane, "```\ncode without closing")
+        val text = pane.styledDocument.getText(0, pane.styledDocument.length)
+        assertTrue(text.contains("code without closing"))
     }
 }
