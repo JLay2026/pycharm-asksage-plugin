@@ -165,17 +165,14 @@ class ChatPanel(private val project: Project) : JPanel(BorderLayout()) {
             add(Box.createHorizontalGlue())
         }
 
-        // Top toolbar row 2: persona + dataset selectors
+        // Top toolbar row 2: persona selector
+        // (Dataset selector hidden for now; datasetSelector retained for future re-enable.)
         val toolbarRow2 = JPanel().apply {
             layout = BoxLayout(this, BoxLayout.X_AXIS)
             border = BorderFactory.createEmptyBorder(2, 4, 2, 4)
             add(JLabel("Persona:"))
             add(Box.createHorizontalStrut(4))
             add(personaSelector)
-            add(Box.createHorizontalStrut(12))
-            add(JLabel("Dataset:"))
-            add(Box.createHorizontalStrut(4))
-            add(datasetSelector)
             add(Box.createHorizontalGlue())
         }
 
@@ -568,6 +565,12 @@ class ChatPanel(private val project: Project) : JPanel(BorderLayout()) {
         followUpPanel.repaint()
     }
 
+    fun syncSelectedModel() {
+        if (settings.defaultModel.isNotBlank()) {
+            modelSelector.setSelectedModelId(settings.defaultModel)
+        }
+    }
+
     private fun loadRegistries() {
         if (!authManager.isConfigured()) return
 
@@ -578,7 +581,7 @@ class ChatPanel(private val project: Project) : JPanel(BorderLayout()) {
             if (modelRegistry.needsRefresh()) {
                 modelRegistry.refreshModels(apiClient)
             }
-            val models = modelRegistry.getModels()
+            val models = modelRegistry.getVisibleModels(settings.includeGovModels)
             SwingUtilities.invokeLater {
                 modelSelector.updateModels(models)
                 if (settings.defaultModel.isNotBlank()) {
