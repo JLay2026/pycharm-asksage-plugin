@@ -523,6 +523,7 @@ class ChatPanel(private val project: Project) : JPanel(BorderLayout()) {
     }
 
     private fun fetchFollowUpQuestions(token: String, message: String, model: String) {
+        if (!settings.showFollowUpQuestions) return
         ApplicationManager.getApplication().executeOnPooledThread {
             try {
                 val followUpResponse = apiClient.getFollowUpQuestions(token, message, model)
