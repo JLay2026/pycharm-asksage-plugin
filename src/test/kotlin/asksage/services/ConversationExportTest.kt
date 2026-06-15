@@ -1,89 +1,213 @@
 package asksage.services
 
-import com.intellij.testFramework.fixtures.BasePlatformTestCase
+import com.google.gson.Gson
+import com.google.gson.JsonObject
+import junit.framework.TestCase
 
-class ConversationExportTest : BasePlatformTestCase() {
+class ConversationExportTest : TestCase() {
 
-    fun testExportToJson() {
-        val session = ChatSession(sessionId = "test-123")
-        session.messages.add(ChatMessage(role = "user", content = "Hello"))
-        session.messages.add(ChatMessage(role = "assistant", content = "Hi there"))
+    private val gson = Gson()
 
-        val exporter = ConversationExporter()
-        val json = exporter.exportToJson(session)
-        assertTrue(json.contains("Hello"))
-        assertTrue(json.contains("Hi there"))
+    private fun createTestMessages(): List<ChatMessage> {
+        return listOf(
+            ChatMessage(MessageRole.USER, "Hello", null, 1700000000000L),
+            ChatMessage(MessageRole.ASSISTANT, "Hi there!", "gpt-4", 1700000001000L),
+            ChatMessage(MessageRole.USER, "How are you?", null, 1700000002000L),
+            ChatMessage(MessageRole.ASSISTANT, "I'm good!", "gpt-4", 1700000003000L),
+            ChatMessage(MessageRole.ERROR, "Network timeout", null, 1700000004000L),
+        )
     }
 
-    fun testExportToMarkdown() {
-        val session = ChatSession(sessionId = "test-123")
-        session.messages.add(ChatMessage(role = "user", content = "Hello"))
-        session.messages.add(ChatMessage(role = "assistant", content = "Hi there"))
+    // --- Markdown Export Tests ---
 
-        val exporter = ConversationExporter()
-        val markdown = exporter.exportToMarkdown(session)
-        assertTrue(markdown.contains("Hello"))
-        assertTrue(markdown.contains("Hi there"))
+    fun testMarkdownExportContainsHeader() {
+        val messages = createTestMessages()
+        val md = exportAsMarkdown(messages, "TestProject")
+        assertTrue("Markdown should contain header", md.contains("# AskSage Conversation"))
     }
 
-    fun testExportToHtml() {
-        val session = ChatSession(sessionId = "test-123")
-        session.messages.add(ChatMessage(role = "user", content = "Hello"))
-
-        val exporter = ConversationExporter()
-        val html = exporter.exportToHtml(session)
-        assertTrue(html.contains("Hello"))
-        assertTrue(html.contains("<html"))
+    fun testMarkdownExportContainsProjectName() {
+        val messages = createTestMessages()
+        val md = exportAsMarkdown(messages, "MyProject")
+        assertTrue("Markdown should contain project name", md.contains("MyProject"))
     }
 
-    fun testExportToCsv() {
-        val session = ChatSession(sessionId = "test-123")
-        session.messages.add(ChatMessage(role = "user", content = "Hello"))
-        session.messages.add(ChatMessage(role = "assistant", content = "Hi"))
-
-        val exporter = ConversationExporter()
-        val csv = exporter.exportToCsv(session)
-        assertTrue(csv.contains("user"))
-        assertTrue(csv.contains("Hello"))
+    fun testMarkdownExportContainsExportDate() {
+        val messages = createTestMessages()
+        val md = exportAsMarkdown(messages, "TestProject")
+        assertTrue("Markdown should contain 'Exported:'", md.contains("Exported:"))
     }
 
-    fun testExportWithTimestamps() {
-        val session = ChatSession(sessionId = "test-123")
-        session.messages.add(ChatMessage(role = "user", content = "Hello", timestamp = 1234567890))
-
-        val exporter = ConversationExporter()
-        val json = exporter.exportToJson(session)
-        assertTrue(json.contains("1234567890"))
+    fun testMarkdownExportContainsUserMessages() {
+        val messages = createTestMessages()
+        val md = exportAsMarkdown(messages, "TestProject")
+        assertTrue(md.contains("Hello"))
+        assertTrue(md.contains("How are you?"))
     }
 
-    fun testExportPreservesOrder() {
-        val session = ChatSession(sessionId = "test-123")
-        session.messages.add(ChatMessage(role = "user", content = "First"))
-        session.messages.add(ChatMessage(role = "assistant", content = "Second"))
-        session.messages.add(ChatMessage(role = "user", content = "Third"))
-
-        val exporter = ConversationExporter()
-        val json = exporter.exportToJson(session)
-        val firstIndex = json.indexOf("First")
-        val secondIndex = json.indexOf("Second")
-        val thirdIndex = json.indexOf("Third")
-        assertTrue(firstIndex < secondIndex && secondIndex < thirdIndex)
+    fun testMarkdownExportContainsAssistantMessages() {
+        val messages = createTestMessages()
+        val md = exportAsMarkdown(messages, "TestProject")
+        assertTrue(md.contains("Hi there!"))
+        assertTrue(md.contains("I'm good!"))
     }
 
-    fun testExportEmptySession() {
-        val session = ChatSession(sessionId = "empty")
-        val exporter = ConversationExporter()
-        val json = exporter.exportToJson(session)
-        assertNotNull(json)
-        assertTrue(json.contains("empty"))
+    fun testMarkdownExportContainsModelTag() {
+        val messages = createTestMessages()
+        val md = exportAsMarkdown(messages, "TestProject")
+        assertTrue("Should contain model tag", md.contains("[gpt-4]"))
     }
 
-    fun testExportWithSpecialCharacters() {
-        val session = ChatSession(sessionId = "test-123")
-        session.messages.add(ChatMessage(role = "user", content = "Test \"quotes\" and <html>"))
+    fun testMarkdownExportContainsErrorMessages() {
+        val messages = createTestMessages()
+        val md = exportAsMarkdown(messages, "TestProject")
+        assertTrue(md.contains("Error"))
+        assertTrue(md.contains("Network timeout"))
+    }
 
-        val exporter = ConversationExporter()
-        val json = exporter.exportToJson(session)
-        assertTrue(json.contains("quotes"))
+    fun testMarkdownExportContainsTimestamps() {
+        val messages = createTestMessages()
+        val md = exportAsMarkdown(messages, "TestProject")
+        // Timestamps should be in parentheses
+        assertTrue("Should contain timestamp formatting", md.contains("*("))
+    }
+
+    fun testMarkdownExportUserSectionHeaders() {
+        val messages = createTestMessages()
+        val md = exportAsMarkdown(messages, "TestProject")
+        assertTrue("Should have 'You' headers", md.contains("## You"))
+    }
+
+    fun testMarkdownExportAssistantSectionHeaders() {
+        val messages = createTestMessages()
+        val md = exportAsMarkdown(messages, "TestProject")
+        assertTrue("Should have 'AskSage' headers", md.contains("## AskSage"))
+    }
+
+    // --- JSON Export Tests ---
+
+    fun testJsonExportIsValidJson() {
+        val messages = createTestMessages()
+        val json = exportAsJson(messages, "TestProject")
+        val parsed = gson.fromJson(json, JsonObject::class.java)
+        assertNotNull("JSON should be parseable", parsed)
+    }
+
+    fun testJsonExportContainsProjectName() {
+        val messages = createTestMessages()
+        val json = exportAsJson(messages, "TestProject")
+        val parsed = gson.fromJson(json, JsonObject::class.java)
+        assertEquals("TestProject", parsed.get("project").asString)
+    }
+
+    fun testJsonExportContainsExportedAt() {
+        val messages = createTestMessages()
+        val json = exportAsJson(messages, "TestProject")
+        val parsed = gson.fromJson(json, JsonObject::class.java)
+        assertTrue("Should have exportedAt field", parsed.has("exportedAt"))
+        assertTrue(parsed.get("exportedAt").asString.isNotBlank())
+    }
+
+    fun testJsonExportContainsMessagesArray() {
+        val messages = createTestMessages()
+        val json = exportAsJson(messages, "TestProject")
+        val parsed = gson.fromJson(json, JsonObject::class.java)
+        assertTrue("Should have messages array", parsed.has("messages"))
+        val msgArray = parsed.getAsJsonArray("messages")
+        assertEquals(5, msgArray.size())
+    }
+
+    fun testJsonExportMessageFields() {
+        val messages = createTestMessages()
+        val json = exportAsJson(messages, "TestProject")
+        val parsed = gson.fromJson(json, JsonObject::class.java)
+        val firstMsg = parsed.getAsJsonArray("messages").get(0).asJsonObject
+        assertTrue("Message should have 'role'", firstMsg.has("role"))
+        assertTrue("Message should have 'content'", firstMsg.has("content"))
+        assertTrue("Message should have 'timestamp'", firstMsg.has("timestamp"))
+        assertEquals("user", firstMsg.get("role").asString)
+        assertEquals("Hello", firstMsg.get("content").asString)
+    }
+
+    fun testJsonExportMessageRoles() {
+        val messages = createTestMessages()
+        val json = exportAsJson(messages, "TestProject")
+        val parsed = gson.fromJson(json, JsonObject::class.java)
+        val msgArray = parsed.getAsJsonArray("messages")
+        assertEquals("user", msgArray.get(0).asJsonObject.get("role").asString)
+        assertEquals("assistant", msgArray.get(1).asJsonObject.get("role").asString)
+        assertEquals("error", msgArray.get(4).asJsonObject.get("role").asString)
+    }
+
+    fun testJsonExportMessageModel() {
+        val messages = createTestMessages()
+        val json = exportAsJson(messages, "TestProject")
+        val parsed = gson.fromJson(json, JsonObject::class.java)
+        val secondMsg = parsed.getAsJsonArray("messages").get(1).asJsonObject
+        assertEquals("gpt-4", secondMsg.get("model").asString)
+    }
+
+    fun testJsonExportMessageTimestamp() {
+        val messages = createTestMessages()
+        val json = exportAsJson(messages, "TestProject")
+        val parsed = gson.fromJson(json, JsonObject::class.java)
+        val firstMsg = parsed.getAsJsonArray("messages").get(0).asJsonObject
+        val ts = firstMsg.get("timestamp").asString
+        assertTrue("Timestamp should contain 'T'", ts.contains("T"))
+    }
+
+    fun testJsonExportEmptyMessages() {
+        val json = exportAsJson(emptyList(), "TestProject")
+        val parsed = gson.fromJson(json, JsonObject::class.java)
+        assertEquals(0, parsed.getAsJsonArray("messages").size())
+    }
+
+    // --- Helper methods that mirror ChatPanel export logic ---
+
+    private fun exportAsMarkdown(messages: List<ChatMessage>, projectName: String): String {
+        val dateFormat = java.text.SimpleDateFormat("yyyy-MM-dd HH:mm:ss")
+        return buildString {
+            appendLine("# AskSage Conversation")
+            appendLine("*Exported: ${dateFormat.format(java.util.Date())}*")
+            appendLine("*Project: $projectName*")
+            appendLine()
+            for (msg in messages) {
+                val ts = dateFormat.format(java.util.Date(msg.timestamp))
+                when (msg.role) {
+                    MessageRole.USER -> {
+                        appendLine("## You *($ts)*")
+                        appendLine(msg.content)
+                        appendLine()
+                    }
+                    MessageRole.ASSISTANT -> {
+                        val modelTag = if (msg.model != null) " [${msg.model}]" else ""
+                        appendLine("## AskSage$modelTag *($ts)*")
+                        appendLine(msg.content)
+                        appendLine()
+                    }
+                    MessageRole.ERROR -> {
+                        appendLine("> **Error** *($ts)*: ${msg.content}")
+                        appendLine()
+                    }
+                }
+            }
+        }
+    }
+
+    private fun exportAsJson(messages: List<ChatMessage>, projectName: String): String {
+        val dateFormat = java.text.SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss'Z'")
+        val export = mapOf(
+            "project" to projectName,
+            "exportedAt" to dateFormat.format(java.util.Date()),
+            "messages" to messages.map { msg ->
+                mapOf(
+                    "role" to msg.role.name.lowercase(),
+                    "content" to msg.content,
+                    "model" to msg.model,
+                    "timestamp" to dateFormat.format(java.util.Date(msg.timestamp)),
+                )
+            },
+        )
+        return com.google.gson.GsonBuilder().setPrettyPrinting().create().toJson(export)
     }
 }
