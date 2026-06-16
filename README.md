@@ -6,7 +6,10 @@ An IntelliJ Platform plugin that integrates the [AskSage.ai](https://asksage.ai)
 
 - **Live Mode Toggle** — Switch between No Live (offline), Live (web search), and Live+ (deep research) modes
 - **Model Selection** — Choose from all available AI models, dynamically fetched from AskSage
-- **Chat Interface** — Streaming responses with markdown rendering, multi-turn conversation history, persona and dataset selectors, and clickable follow-up questions
+- **Preferred Model** — Pick a starting model in settings that is selected automatically at the start of each session and persists across IDE restarts
+- **Government Model Filtering** — Optionally include or exclude government (`-gov`) models from the model list (excluded by default)
+- **Connection & Model Tests** — Validate your credentials and model discovery from the settings panel, with a pass/fail indicator; a successful test refreshes the plugin's dropdowns without an IDE restart
+- **Chat Interface** — Streaming responses with markdown rendering, multi-turn conversation history, a persona selector, and clickable follow-up questions
 - **Editor Context Actions** — Right-click menu: Explain Code, Refactor, Generate Docs, Ask About File, Send Selection to AskSage
 - **Keyboard Shortcuts** — `Ctrl+Shift+Alt+E` (Explain), `Ctrl+Shift+Alt+R` (Refactor), `Ctrl+Shift+Alt+D` (Docs), `Ctrl+Shift+Alt+A` (Ask), `Ctrl+Shift+Alt+K` (Add to Knowledge Base). Send Selection has no default shortcut — assign one in **Settings > Keymap** if desired
 - **Plugin Browser** — Browse and execute AskSage plugins with results rendered inline
@@ -33,8 +36,28 @@ Your API key and email are stored in the IDE's secure storage (IntelliJ Password
 1. Install the plugin from the JetBrains Marketplace (or build from source)
 2. Go to **Settings > Tools > AskSage**
 3. Enter your AskSage email and API key
-4. Open the **AskSage** tool window (right sidebar)
-5. Select a model, choose your live mode, and start chatting
+4. Click **Test Connection** to confirm your credentials, then optionally **Test Model Discovery** to load the model list
+5. (Optional) Choose a **Preferred Model** to start every session with
+6. Open the **AskSage** tool window (right sidebar), select your live mode, and start chatting
+
+## Configuration
+
+All settings live in **Settings > Tools > AskSage**:
+
+| Setting | Description |
+|---------|-------------|
+| Email / API Key | Credentials exchanged for a 24-hour token; stored in IntelliJ PasswordSafe |
+| Base URL | AskSage API endpoint |
+| Test Connection | Validates the entered (possibly unsaved) credentials and shows a result; on success, saves them and live-refreshes the plugin |
+| Test Model Discovery | Authenticates and fetches the model list, reporting the model count; populates the dropdowns without an IDE restart |
+| Default Live Mode | Initial live mode (No Live / Live / Live+) for new sessions |
+| Temperature | Sampling temperature for queries |
+| Reasoning Effort | Reasoning effort level (low / medium / high) |
+| Show suggested follow-up questions | Toggles the clickable follow-up suggestions in chat |
+| Include government (gov) models | Includes `-gov` models in the model list (off by default) |
+| Preferred Model | Starting model selected automatically each session; persists across restarts. Leave blank to use the last-used or first-available model |
+| Clear Credentials / Sign Out | Removes the stored API key and email |
+| Reset Settings | Restores preferences to defaults (credentials are not affected) |
 
 ## Building from Source
 
@@ -60,7 +83,7 @@ To run tests:
 src/main/kotlin/asksage/
   api/                  # AskSage API client, endpoints, auth, DTOs
   actions/              # Editor context actions (Explain, Refactor, Docs, etc.)
-  services/             # Registry services, chat session, settings state
+  services/             # Registry services, chat session, settings state, refresh topic
   ui/
     toolwindow/         # Chat panel, plugin browser, token usage, selectors
     settings/           # Settings configurable UI
